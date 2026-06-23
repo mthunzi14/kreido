@@ -1,10 +1,12 @@
 import React, { useEffect, useRef } from 'react'
+import { useAudio } from '../context/AudioContext'
 
 const TRAIL_COUNT = 3
 
 export default function CustomCursor() {
-  const cursorRef  = useRef(null)
-  const trailRefs  = useRef([])
+  const { playTick, playClick } = useAudio()
+  const cursorRef = useRef(null)
+  const trailRefs = useRef([])
 
   useEffect(() => {
     // Only show custom cursor on pointer devices
@@ -48,11 +50,27 @@ export default function CustomCursor() {
     animate()
     document.addEventListener('mousemove', onMouseMove)
 
-    const onMouseEnterLink = () => cursor.classList.add('cursor-hover')
-    const onMouseLeaveLink = () => cursor.classList.remove('cursor-hover')
+    // Play click sound on mouse press
+    const onMouseDown = () => {
+      playClick()
+    }
+    document.addEventListener('mousedown', onMouseDown)
+
+    // Play high-frequency tap on link hover
+    const onMouseEnterLink = () => {
+      cursor.classList.add('cursor-hover')
+      playTick()
+    }
+    const onMouseLeaveLink = () => {
+      cursor.classList.remove('cursor-hover')
+    }
 
     const addHoverListeners = () => {
       document.querySelectorAll('a, button, [role="button"], input, textarea, select').forEach(el => {
+        // Prevent duplicate listeners if this function is called multiple times
+        el.removeEventListener('mouseenter', onMouseEnterLink)
+        el.removeEventListener('mouseleave', onMouseLeaveLink)
+        
         el.addEventListener('mouseenter', onMouseEnterLink)
         el.addEventListener('mouseleave', onMouseLeaveLink)
       })
@@ -65,10 +83,11 @@ export default function CustomCursor() {
 
     return () => {
       document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mousedown', onMouseDown)
       cancelAnimationFrame(rafId)
       observer.disconnect()
     }
-  }, [])
+  }, [playTick, playClick])
 
   return (
     <>
