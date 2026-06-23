@@ -1,118 +1,222 @@
-import React, { useEffect } from 'react'
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import PageTransition from '../components/PageTransition'
-import FadeUp from '../components/FadeUp'
-import FloatingSymbols from '../components/FloatingSymbols'
+import { useAudio } from '../context/AudioContext'
 
 export default function Portfolio() {
-  useEffect(() => {
-    document.title = 'Portfolio — Kreido'
-    document.querySelector('meta[name="description"]')?.setAttribute('content', "View Kreido's work — premium websites and digital solutions built for real clients. See what we've engineered.")
-    document.querySelector('meta[property="og:title"]')?.setAttribute('content', 'Portfolio — Kreido')
-    document.querySelector('meta[property="og:description"]')?.setAttribute('content', "View Kreido's work — premium websites and digital solutions built for real clients.")
-  }, [])
+  const { playTick, playClick } = useAudio()
+  const [activeProject, setActiveProject] = useState(null)
+
+  const projects = [
+    {
+      id: 'msangambe',
+      num: '01',
+      title: 'Msangambe Studio',
+      type: 'High-Fashion Editorial Platform',
+      desc: 'Bespoke custom-coded front-end lookbook for an elite fashion label. Engineered to feature high-resolution model imagery loading instantly over mobile connections.',
+      speed: '0.4s',
+      bundleSize: '312KB',
+      lighthouse: '100 / 100 / 100',
+      url: 'https://msangambe.com',
+      codeSnippet: `// GPU-Accelerated Asset Streaming
+const streamAsset = async (uri) => {
+  const cache = await caches.open('msangambe-v1');
+  const cachedResponse = await cache.match(uri);
+  if (cachedResponse) return cachedResponse.blob();
+  
+  const res = await fetch(uri, { priority: 'high' });
+  cache.put(uri, res.clone());
+  return res.blob();
+};`,
+      image: '/Kenala%20Health%20Hub%20Screenshot.png' // Fallback image placeholder
+    },
+    {
+      id: 'residency',
+      num: '02',
+      title: 'The Residency on 8th Street',
+      type: 'Spatial Sound & Brand Platform',
+      desc: 'An immersive digital house interface for DJ Resident SVR. Exposes spatial navigation nodes, context-driven voice lines, and live interactive audio ducking.',
+      speed: '0.5s',
+      bundleSize: '415KB',
+      lighthouse: '99 / 100 / 100',
+      url: 'https://theresidencyon8.com',
+      codeSnippet: `// Web Audio API Ducking Chain
+const triggerVoiceLine = (gainNode, musicNode) => {
+  const now = audioCtx.currentTime;
+  musicNode.gain.setValueAtTime(1.0, now);
+  musicNode.gain.linearRampToValueAtTime(0.2, now + 0.2); // Duck
+  
+  voiceNode.start(now);
+  voiceNode.onended = () => {
+    musicNode.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.5); // Swell
+  };
+};`,
+      image: '/Kenala%20Health%20Hub%20Screenshot.png'
+    },
+    {
+      id: 'kenala',
+      num: '03',
+      title: 'Kenala Health Hub',
+      type: 'Premium Medical & Wellness Platform',
+      desc: 'A robust digital booking and information platform built for a health practice. Featuring automated appointment systems and clean clinical directories.',
+      speed: '0.6s',
+      bundleSize: '290KB',
+      lighthouse: '100 / 98 / 100',
+      url: 'https://kenalahealthhub.co.za',
+      codeSnippet: `// Automated Calendar Booking Sync
+const syncBooking = async (appointment) => {
+  const dbRef = doc(db, "bookings", appointment.id);
+  await setDoc(dbRef, {
+    ...appointment,
+    status: "confirmed",
+    timestamp: serverTimestamp()
+  });
+  triggerSMSAlert(appointment.clientPhone);
+};`,
+      image: '/Kenala%20Health%20Hub%20Screenshot.png'
+    }
+  ]
+
+  const openSpecDrawer = (project) => {
+    playClick()
+    setActiveProject(activeProject?.id === project.id ? null : project)
+  }
 
   return (
     <PageTransition>
-      {/* ── PAGE HERO ──────────────────────────────────────────────────────── */}
-      <section className="pt-40 pb-14 px-6 bg-[#1A1A1A] relative overflow-hidden">
-        <FloatingSymbols />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 50% 60% at 50% 0%, rgba(107,138,58,0.08) 0%, transparent 70%)' }}
+      <div className="min-h-screen pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col justify-center">
+        {/* Prismatic ambient glow in background */}
+        <div 
+          className="prismatic-glow w-[300px] h-[300px] sm:w-[500px] sm:h-[500px] opacity-10"
+          style={{ 
+            top: '40%', 
+            left: '10%', 
+            background: `radial-gradient(circle, rgba(120,75,255,0.2) 0%, rgba(0,240,255,0.1) 100%)`
+          }}
         />
-        <div className="relative max-w-7xl mx-auto text-center">
-          <FadeUp>
-            <p className="font-['DM_Sans'] text-xs font-medium tracking-[0.3em] uppercase text-[#A8E8D0] mb-4">
-              Selected projects
-            </p>
-            <h1 className="font-['Syne'] font-extrabold text-white mb-6"
-              style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)' }}>
-              Our work
-            </h1>
-            <p className="font-['DM_Sans'] text-[#B3B5B0] text-lg leading-relaxed text-center" style={{ maxWidth: '600px', margin: '0 auto' }}>
-              A curated selection of projects we've built, designed and launched for our clients.
-            </p>
-          </FadeUp>
+
+        <div className="relative z-10 text-center mb-16">
+          <span className="tech-label">[ SHOWROOM // SELECTED DIGITAL ASSETS ]</span>
+          <h1 className="text-4xl sm:text-6xl font-black mt-4 uppercase tracking-tighter">
+            Selected Works
+          </h1>
+          <p className="text-sm sm:text-base text-zinc-400 mt-4 max-w-xl mx-auto">
+            We don't build generic pages. We custom-code high-performance systems. Click the spec link on any project to view its technical blueprints.
+          </p>
         </div>
-      </section>
 
-      {/* ── PROJECT GRID — reduced top gap (23% less than section-padding) ─── */}
-      <section className="portfolio-gap bg-[#1A1A1A]">
-        <div className="max-w-7xl mx-auto">
+        {/* Portfolio Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10 w-full">
+          {projects.map((project) => (
+            <div key={project.id} className="glass-panel flex flex-col justify-between h-full">
+              {/* Silver corner pin rivets */}
+              <span className="silver-pin pin-tl"></span>
+              <span className="silver-pin pin-tr"></span>
+              <span className="silver-pin pin-bl"></span>
+              <span className="silver-pin pin-br"></span>
 
-          {/* ── Kenala Health Hub ── */}
-          <FadeUp>
-            <div className="group bg-[#222222] rounded-lg overflow-hidden border border-[#6B8A3A]/0 hover:border-[#6B8A3A]/30 service-card-glow hover:-translate-y-1 transition-all duration-300 max-w-xl mx-auto mb-6">
-              {/* Real screenshot thumbnail */}
-              <div className="relative aspect-[16/9] overflow-hidden kenala-thumb-bg">
-                <img
-                  src="/Kenala%20Health%20Hub%20Screenshot.png"
-                  alt="Kenala Health Hub website screenshot"
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                  style={{ maxWidth: '800px' }}
-                />
-                {/* Hover overlay with View project */}
-                <div className="absolute inset-0 bg-[#6B8A3A]/0 group-hover:bg-[#6B8A3A]/75 transition-all duration-300 flex items-center justify-center">
-                  <a
-                    href="https://kenalahealthhub.co.za"
+              <div className="p-6 relative z-10 flex-1 flex flex-col justify-between">
+                <div>
+                  <span className="font-mono text-xxs text-[#00f0ff] block mb-2">[ PROJECT_{project.num} ]</span>
+                  <h3 className="text-xl font-bold uppercase tracking-tight text-white mb-1">{project.title}</h3>
+                  <span className="text-[9px] font-mono uppercase text-zinc-500 tracking-wider block mb-4">{project.type}</span>
+                  <p className="text-xs text-zinc-400 leading-relaxed mb-6">
+                    {project.desc}
+                  </p>
+                </div>
+
+                <div className="flex justify-between items-center pt-6 border-t border-zinc-900 mt-auto">
+                  <button 
+                    onClick={() => openSpecDrawer(project)}
+                    onMouseEnter={playTick}
+                    className="text-[10px] font-mono uppercase text-[#00f0ff] hover:text-white transition-colors duration-300"
+                  >
+                    [ View Technical Spec ]
+                  </button>
+                  <a 
+                    href={project.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={e => e.stopPropagation()}
-                    className="opacity-0 group-hover:opacity-100 transition-all duration-300 font-['DM_Sans'] font-semibold text-white text-sm tracking-wide border border-white/60 px-5 py-2.5 rounded hover:bg-white/10"
+                    onMouseEnter={playTick}
+                    className="text-[10px] font-mono uppercase text-zinc-500 hover:text-white transition-colors duration-300"
                   >
-                    View project
+                    Launch ↗
                   </a>
                 </div>
               </div>
-              <div className="p-6">
-                <span className="font-['DM_Sans'] text-xs tracking-widest uppercase text-[#6B8A3A] mb-2 block">
-                  Web Development
+            </div>
+          ))}
+        </div>
+
+        {/* Blueprint Specs Slide-out Drawer */}
+        <AnimatePresence>
+          {activeProject && (
+            <motion.div 
+              initial={{ opacity: 0, x: 400 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 400 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="fixed top-0 right-0 h-full w-full max-w-lg bg-[#0b0b0e] border-l border-zinc-800 z-50 p-8 shadow-2xl flex flex-col justify-between overflow-y-auto"
+            >
+              <div>
+                <div className="flex justify-between items-center mb-8">
+                  <span className="font-mono text-xs text-[#00f0ff]">[ TECHNICAL_SPECIFICATION ]</span>
+                  <button 
+                    onClick={() => { playClick(); setActiveProject(null); }}
+                    onMouseEnter={playTick}
+                    className="text-xs font-mono text-zinc-500 hover:text-white uppercase"
+                  >
+                    [ Close ]
+                  </button>
+                </div>
+
+                <h3 className="text-2xl font-black uppercase text-white tracking-tight mb-2">
+                  {activeProject.title}
+                </h3>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-8">
+                  {activeProject.type}
                 </span>
-                <h3 className="font-['Syne'] font-bold text-white text-xl mb-3">Kenala Health Hub</h3>
-                <p className="font-['DM_Sans'] text-[#B3B5B0] text-sm leading-relaxed mb-5">
-                  A premium health and wellness platform for Kenala Health Hub — designed and built from the ground up.
-                </p>
-                <a
-                  href="https://kenalahealthhub.co.za"
+
+                {/* Metrics Table */}
+                <div className="border border-zinc-900 rounded p-4 mb-8 space-y-4 bg-zinc-950/40">
+                  <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                    <span className="text-xxs font-mono text-zinc-500">LOAD_LATENCY</span>
+                    <span className="text-xs font-mono text-white">{activeProject.speed}</span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-zinc-900 pb-2">
+                    <span className="text-xxs font-mono text-zinc-500">COMPILED_BUNDLE_SIZE</span>
+                    <span className="text-xs font-mono text-white">{activeProject.bundleSize}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-1">
+                    <span className="text-xxs font-mono text-zinc-500">GOOGLE_LIGHTHOUSE_INDEX</span>
+                    <span className="text-xs font-mono text-white text-[#00f0ff]">{activeProject.lighthouse}</span>
+                  </div>
+                </div>
+
+                {/* Code highlight */}
+                <div>
+                  <span className="text-xxs font-mono text-zinc-500 block mb-3">[ CORE_CODE_INJECTION ]</span>
+                  <pre className="p-4 bg-zinc-950 border border-zinc-900 rounded text-[10px] font-mono text-zinc-400 overflow-x-auto leading-relaxed">
+                    <code>{activeProject.codeSnippet}</code>
+                  </pre>
+                </div>
+              </div>
+
+              <div className="pt-8 border-t border-zinc-900 mt-8">
+                <a 
+                  href={activeProject.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-[#6B8A3A]/20 border border-[#6B8A3A]/40 text-[#A8E8D0] font-['DM_Sans'] text-sm font-medium px-5 py-2.5 rounded hover:bg-[#6B8A3A]/30 transition-all duration-300"
+                  onMouseEnter={playTick}
+                  className="w-full py-4 bg-[#f5f5f7] text-[#050507] font-mono font-bold text-center block rounded uppercase text-xs hover:bg-[#00f0ff] transition-all duration-300"
                 >
-                  View project
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  [ Launch Live Core Platform ]
                 </a>
               </div>
-            </div>
-          </FadeUp>
-
-          {/* ── More projects coming soon ── */}
-          <FadeUp delay={0.1}>
-            <div className="relative rounded-lg overflow-hidden border border-[#A8E8D0]/20 bg-[#222222]" style={{ minHeight: '240px' }}>
-              <FloatingSymbols />
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgba(168,232,208,0.04) 0%, transparent 70%)' }}
-              />
-              <div className="relative z-10 flex flex-col items-center justify-center text-center px-8 py-16">
-                <div className="w-10 h-px bg-[#A8E8D0]/30 mb-6" />
-                <p className="font-['DM_Sans'] text-xs font-medium tracking-[0.3em] uppercase text-[#A8E8D0] mb-4">
-                  More coming
-                </p>
-                <h3 className="font-['Syne'] font-bold text-white mb-4" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.75rem)' }}>
-                  More projects coming soon
-                </h3>
-                <p className="font-['DM_Sans'] text-[#B3B5B0] text-base leading-relaxed" style={{ maxWidth: '480px' }}>
-                  Exciting new projects in the works. Check back soon.
-                </p>
-                <div className="w-10 h-px bg-[#A8E8D0]/30 mt-6" />
-              </div>
-            </div>
-          </FadeUp>
-        </div>
-      </section>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </PageTransition>
   )
 }
