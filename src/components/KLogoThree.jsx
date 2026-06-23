@@ -312,7 +312,7 @@ function Scene() {
                 }`}
                 style={{ whiteSpace: 'nowrap' }}
               >
-                {label}
+                {node.label}
               </div>
             </Html>
           </group>
