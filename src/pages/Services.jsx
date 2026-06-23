@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageTransition from '../components/PageTransition'
 import { useAudio } from '../context/AudioContext'
+import Footer from '../components/Footer'
 
 export default function Services() {
   const { playTick, playClick } = useAudio()
@@ -227,6 +228,7 @@ export default function Services() {
             )
           })}
         </div>
+        <Footer />
       </div>
     </PageTransition>
   )

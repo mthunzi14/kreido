@@ -1,12 +1,11 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { useAudio } from './context/AudioContext'
 
-import Navbar           from './components/Navbar'
-import Footer           from './components/Footer'
-import CustomCursor     from './components/CustomCursor'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import ScrollToTop      from './components/ScrollToTop'
+import CustomCursor     from './components/CustomCursor'
 
 import Home      from './pages/Home'
 import Services  from './pages/Services'
@@ -34,18 +33,50 @@ function AnimatedRoutes() {
   )
 }
 
+function AppContent() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { playClick, playTick } = useAudio()
+
+  return (
+    <>
+      {location.pathname !== '/' && <ScrollProgressBar />}
+      <ScrollToTop />
+      <CustomCursor />
+
+      {/* Floating High-Tech Back Button (replacing navbar on subpages) */}
+      {location.pathname !== '/' && (
+        <button
+          onClick={() => { playClick(); navigate('/'); }}
+          onMouseEnter={playTick}
+          className="fixed top-6 left-6 z-50 font-mono text-[9px] uppercase tracking-widest text-[#00f0ff] bg-[#050507]/90 backdrop-blur border border-zinc-900 hover:border-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.2)] px-4 py-2.5 rounded transition-all duration-300 flex items-center gap-2 cursor-pointer"
+        >
+          <span>←</span> [ BACK_TO_CORE ]
+        </button>
+      )}
+
+      <main>
+        <AppContentLayout>
+          <AnimatedRoutes />
+        </AppContentLayout>
+      </main>
+    </>
+  )
+}
+
+// Layout wrapper to inject min-height and handle general page layout
+function AppContentLayout({ children }) {
+  return (
+    <div className="min-h-screen bg-[#050507] text-white selection:bg-[#00f0ff]/20 selection:text-white">
+      {children}
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      {/* Progress bar must be inside BrowserRouter for useLocation */}
-      <ScrollProgressBar />
-      <ScrollToTop />
-      <CustomCursor />
-      <Navbar />
-      <main>
-        <AnimatedRoutes />
-      </main>
-      <Footer />
+      <AppContent />
     </BrowserRouter>
   )
 }

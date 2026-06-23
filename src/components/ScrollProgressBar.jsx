@@ -38,7 +38,7 @@ export default function ScrollProgressBar() {
         style={{
           height: '100%',
           width: `${progress}%`,
-          backgroundColor: '#A8E8D0',
+          backgroundColor: '#00f0ff',
           transition: 'width 80ms linear',
         }}
       />

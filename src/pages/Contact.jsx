@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import PageTransition from '../components/PageTransition'
 import { useAudio } from '../context/AudioContext'
+import Footer from '../components/Footer'
 
 export default function Contact() {
   const { playTick, playClick, playSuccess } = useAudio()
@@ -91,6 +92,7 @@ export default function Contact() {
             </button>
           </form>
         </div>
+        <Footer />
       </div>
     </PageTransition>
   )

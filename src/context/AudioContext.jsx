@@ -46,49 +46,6 @@ export function AudioProvider({ children }) {
     voiceGain.connect(masterGain)
     voiceGainRef.current = voiceGain
 
-    // Start a very quiet, slow background atmospheric swell (ambient pad)
-    startAmbientSwell(ctx, musicGain)
-  }
-
-  // Generate a slow, generative ambient pad so there is a constant, warm audio atmosphere
-  const startAmbientSwell = (ctx, destinationGain) => {
-    try {
-      const osc1 = ctx.createOscillator()
-      const osc2 = ctx.createOscillator()
-      const filter = ctx.createBiquadFilter()
-      const gainNode = ctx.createGain()
-
-      osc1.type = 'sine'
-      osc1.frequency.setValueAtTime(110, ctx.currentTime) // A2 note
-      
-      osc2.type = 'triangle'
-      osc2.frequency.setValueAtTime(165, ctx.currentTime) // E3 note (Perfect fifth)
-
-      filter.type = 'lowpass'
-      filter.frequency.setValueAtTime(300, ctx.currentTime)
-
-      gainNode.gain.setValueAtTime(0.04, ctx.currentTime) // Very subtle/quiet
-
-      osc1.connect(filter)
-      osc2.connect(filter)
-      filter.connect(gainNode)
-      gainNode.connect(destinationGain)
-
-      osc1.start()
-      osc2.start()
-
-      // Slow volume swell using LFO modulation
-      const lfo = ctx.createOscillator()
-      const lfoGain = ctx.createGain()
-      lfo.frequency.setValueAtTime(0.08, ctx.currentTime) // Very slow modulation (80mhz)
-      lfoGain.gain.setValueAtTime(0.02, ctx.currentTime)
-      
-      lfo.connect(lfoGain)
-      lfoGain.connect(gainNode.gain)
-      lfo.start()
-    } catch (e) {
-      console.warn("Generative audio pad failed to initialize:", e)
-    }
   }
 
   // Synthesize a high-frequency glass tap ("tink") for node and button hovers

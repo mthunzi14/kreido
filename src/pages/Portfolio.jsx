@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import PageTransition from '../components/PageTransition'
 import { useAudio } from '../context/AudioContext'
+import Footer from '../components/Footer'
 
 export default function Portfolio() {
   const { playTick, playClick } = useAudio()
@@ -216,6 +217,7 @@ const syncBooking = async (appointment) => {
             </motion.div>
           )}
         </AnimatePresence>
+        <Footer />
       </div>
     </PageTransition>
   )
