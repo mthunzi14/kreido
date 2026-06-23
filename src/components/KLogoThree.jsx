@@ -1,55 +1,61 @@
 import React, { useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, MeshTransmissionMaterial } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
-function DiamondCoreMesh() {
-  const meshRef = useRef()
+function GyroscopeCore() {
+  const torusKnotRef = useRef()
+  const outerSphereRef = useRef()
   const [hovered, setHovered] = useState(false)
-  const [active, setActive] = useState(false)
 
-  // Rotate and float the geometry in 3D space
+  // Rotate layers in opposite directions to create a high-tech mechanical gyroscope effect
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
-    if (meshRef.current) {
-      // Continuous rotation
-      meshRef.current.rotation.x = time * 0.25
-      meshRef.current.rotation.y = time * 0.3
+    
+    if (torusKnotRef.current) {
+      // Internal core rotates on multiple axes
+      torusKnotRef.current.rotation.x = time * (hovered ? 0.6 : 0.25)
+      torusKnotRef.current.rotation.y = time * (hovered ? 0.7 : 0.3)
+    }
 
-      // Slow floating translation (sinusoidal)
-      meshRef.current.position.y = Math.sin(time * 1.5) * 0.15
+    if (outerSphereRef.current) {
+      // Outer orbital ring rotates in reverse
+      outerSphereRef.current.rotation.y = -time * 0.15
+      outerSphereRef.current.rotation.z = time * 0.1
     }
   })
 
   return (
-    <mesh
-      ref={meshRef}
-      scale={hovered ? 1.45 : 1.3}
-      onClick={() => setActive(!active)}
-      onPointerOver={() => setHovered(true)}
+    <group 
+      onPointerOver={() => setHovered(true)} 
       onPointerOut={() => setHovered(false)}
     >
-      {/* Dynamic 3D Torus Knot representing the complex mathematical stencil core */}
-      <torusKnotGeometry args={[0.9, 0.24, 120, 16]} />
-      
-      {/* High-fidelity glass-refraction material (Diamondmorphic) */}
-      <MeshTransmissionMaterial
-        backside
-        backsideThickness={0.2}
-        thickness={0.5}
-        chromaticAberration={0.06} // chromatic prism refraction
-        anisotropicFiltering={3}
-        distortion={0.3}
-        distortionScale={0.5}
-        temporalDistortion={0.1}
-        clearcoat={1}
-        clearcoatRoughness={0.1}
-        roughness={0.05}
-        metalness={0.1}
-        ior={1.5} // Index of Refraction matching real diamond/glass
-        color={hovered ? '#00f0ff' : '#ffffff'}
-      />
-    </mesh>
+      {/* 1. Inner Core: Glowing Wireframe Torus Knot */}
+      <mesh ref={torusKnotRef}>
+        <torusKnotGeometry args={[0.75, 0.2, 100, 16]} />
+        <meshStandardMaterial
+          wireframe
+          color={hovered ? '#00f0ff' : '#ffffff'}
+          emissive={hovered ? '#00bbff' : '#222222'}
+          emissiveIntensity={hovered ? 2.5 : 0.8}
+          roughness={0.1}
+          metalness={0.9}
+        />
+      </mesh>
+
+      {/* 2. Outer Orbital Ring: Wireframe Sphere */}
+      <mesh ref={outerSphereRef}>
+        <sphereGeometry args={[1.3, 16, 16]} />
+        <meshStandardMaterial
+          wireframe
+          color={hovered ? '#005588' : '#333333'}
+          transparent
+          opacity={0.3}
+          roughness={0.5}
+          metalness={0.5}
+        />
+      </mesh>
+    </group>
   )
 }
 
@@ -57,24 +63,17 @@ export default function KLogoThree() {
   return (
     <div className="w-full h-full cursor-grab active:cursor-grabbing relative z-10">
       <Canvas
-        camera={{ position: [0, 0, 3.8], fov: 45 }}
+        camera={{ position: [0, 0, 3.2], fov: 45 }}
         gl={{ antialias: true, alpha: true }}
       >
-        <ambientLight intensity={0.6} />
+        {/* Lights catching the wireframe dimensions */}
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={1} color="#00f0ff" />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ffffff" />
         
-        {/* Spotlighting to capture glass gloss & reflections */}
-        <spotLight 
-          position={[10, 10, 10]} 
-          angle={0.15} 
-          penumbra={1} 
-          intensity={1.5} 
-          castShadow 
-        />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+        <GyroscopeCore />
         
-        <DiamondCoreMesh />
-        
-        {/* Orbit controls allow the client to rotate, tilt, and interact with the mesh */}
+        {/* Allow users to grab, drag, and throw the rotation */}
         <OrbitControls 
           enableZoom={false} 
           enablePan={false} 
