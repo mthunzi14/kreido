@@ -5,33 +5,71 @@ import { useNavigate } from 'react-router-dom'
 import { useAudio } from '../context/AudioContext'
 import * as THREE from 'three'
 
+// Helper to generate a soft circular particle texture dynamically
+function useCircleTexture() {
+  return useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 16
+    canvas.height = 16
+    const ctx = canvas.getContext('2d')
+
+    const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8)
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)')
+    grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)')
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 16, 16)
+
+    const texture = new THREE.CanvasTexture(canvas)
+    return texture
+  }, [])
+}
+
 // Galaxy background starfield (pink, light blue, and gray stars)
 function Starfield() {
   const starsRef = useRef()
-  const count = 1600
+  const circleTexture = useCircleTexture()
+  
+  // 1. Generate two layers of stars: Central Spiral Disc & Spherical Outer Envelope
+  const count = 3000 // 1,500 disk stars + 1,500 sphere stars
 
   const [positions, colors] = useMemo(() => {
     const positions = new Float32Array(count * 3)
     const colors = new Float32Array(count * 3)
     
-    // Locked color system: Neon Pink, Cyber Cyan, Titanium Gray, Platinum Silver
     const themeColors = [
-      new THREE.Color('#ff55aa'), // Pink
-      new THREE.Color('#00e0ff'), // Cyan/Light Blue
+      new THREE.Color('#ff4499'), // Neon Pink
+      new THREE.Color('#00eeff'), // Cyber Cyan
       new THREE.Color('#7e7e83'), // Titanium Gray
-      new THREE.Color('#d5d5d9')  // Platinum Silver
+      new THREE.Color('#ececf0')  // Platinum Silver
     ]
 
     for (let i = 0; i < count; i++) {
-      // Create spiral galaxy arm distribution
-      const r = Math.random() * 8.5 + 1.5
-      const arm = Math.random() < 0.5 ? 0 : Math.PI
-      const spin = r * 0.55
-      const angle = arm + spin + (Math.random() - 0.5) * 0.35
+      let x, y, z
       
-      const x = Math.cos(angle) * r
-      const z = Math.sin(angle) * r
-      const y = (Math.random() - 0.5) * 1.6 * Math.exp(-r / 3.5)
+      if (i < 1500) {
+        // Layer A: Spiral Disc (Concentrated in center, thin disk)
+        const r = Math.random() * 8.0 + 1.2
+        const arm = Math.random() < 0.5 ? 0 : Math.PI
+        const spin = r * 0.6
+        const angle = arm + spin + (Math.random() - 0.5) * 0.35
+        
+        x = Math.cos(angle) * r
+        z = Math.sin(angle) * r
+        y = (Math.random() - 0.5) * 1.2 * Math.exp(-r / 3.0)
+      } else {
+        // Layer B: Spherical Envelope (Background stars surrounding everything)
+        const r = Math.random() * 10.0 + 7.0 // Outer sphere shell
+        const u = Math.random()
+        const v = Math.random()
+        const theta = u * 2.0 * Math.PI
+        const phi = Math.acos(2.0 * v - 1.0)
+        
+        x = r * Math.sin(phi) * Math.cos(theta)
+        y = r * Math.sin(phi) * Math.sin(theta)
+        z = r * Math.cos(phi)
+      }
 
       positions[i * 3] = x
       positions[i * 3 + 1] = y
@@ -49,8 +87,8 @@ function Starfield() {
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
     if (starsRef.current) {
-      // Extremely slow cosmic rotation
-      starsRef.current.rotation.y = time * 0.012
+      // Slow rotation of the background universe
+      starsRef.current.rotation.y = time * 0.01
     }
   })
 
@@ -67,101 +105,30 @@ function Starfield() {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.035}
+        size={0.075} // Larger glowing particles
         vertexColors
         transparent
-        opacity={0.7}
+        opacity={0.8}
+        map={circleTexture}
         sizeAttenuation={true}
         depthWrite={false}
+        blending={THREE.AdditiveBlending} // Additive glow
       />
     </points>
-  )
-}
-
-// Orbiting Node representing navigation tabs
-function OrbitingNode({ label, path, baseAngle, radius }) {
-  const groupRef = useRef()
-  const meshRef = useRef()
-  const navigate = useNavigate()
-  const { playTick, playClick } = useAudio()
-  const [hovered, setHovered] = useState(false)
-
-  useFrame((state) => {
-    const time = state.clock.getElapsedTime()
-    // Orbit around the center
-    const angle = baseAngle + time * 0.05
-    if (groupRef.current) {
-      groupRef.current.position.x = Math.cos(angle) * radius
-      groupRef.current.position.y = Math.sin(angle) * radius
-      // Gentle floating sine-wave motion
-      groupRef.current.position.z = Math.sin(angle * 2.5) * 0.12
-    }
-
-    if (meshRef.current) {
-      // Slow spin of the satellite itself
-      meshRef.current.rotation.y = time * 0.4
-    }
-  })
-
-  const handlePointerOver = (e) => {
-    e.stopPropagation()
-    setHovered(true)
-    playTick()
-  }
-
-  const handlePointerOut = (e) => {
-    e.stopPropagation()
-    setHovered(false)
-  }
-
-  const handleClick = (e) => {
-    e.stopPropagation()
-    playClick()
-    navigate(path)
-  }
-
-  return (
-    <group ref={groupRef}>
-      <mesh
-        ref={meshRef}
-        onPointerOver={handlePointerOver}
-        onPointerOut={handlePointerOut}
-        onClick={handleClick}
-        scale={hovered ? 1.35 : 1.0}
-      >
-        <sphereGeometry args={[0.15, 32, 32]} />
-        <meshPhysicalMaterial
-          roughness={0.05}
-          metalness={0.9}
-          color={hovered ? '#00f0ff' : '#ffffff'}
-          transmission={0.75}
-          thickness={0.6}
-          clearcoat={1.0}
-        />
-      </mesh>
-
-      {/* HTML badge overlay tracking the node coordinate */}
-      <Html distanceFactor={6} center>
-        <div
-          onClick={handleClick}
-          onMouseEnter={handlePointerOver}
-          onMouseLeave={handlePointerOut}
-          className={`font-mono text-[9px] px-2.5 py-0.5 rounded bg-[#050507]/90 border border-zinc-900 text-[#8e8e93] uppercase tracking-widest transition-all duration-300 select-none cursor-pointer hover:text-[#00f0ff] hover:border-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.45)] hover:scale-105 ${
-            hovered ? 'text-[#00f0ff] border-[#00f0ff] shadow-[0_0_12px_rgba(0,240,255,0.45)] scale-105 z-20' : 'z-10'
-          }`}
-          style={{ whiteSpace: 'nowrap' }}
-        >
-          {label}
-        </div>
-      </Html>
-    </group>
   )
 }
 
 function Scene() {
   const kRef = useRef()
   const lightRef = useRef()
-  const [hovered, setHovered] = useState(false)
+  const [logoHovered, setLogoHovered] = useState(false)
+  const navigate = useNavigate()
+  const { playTick, playClick } = useAudio()
+
+  // References to the 5 orbiting node groups for performance optimization
+  const nodeRefs = useRef([])
+  const nodeMeshRefs = useRef([])
+  const [hoveredNode, setHoveredNode] = useState(null)
 
   // Load flat Crystal Diamond K logo texture (pre-rendered transparent png)
   const logoTexture = useTexture('/logo-flat.png')
@@ -185,7 +152,7 @@ function Scene() {
   }, [])
 
   const extrudeSettings = useMemo(() => ({
-    depth: 0.15,
+    depth: 0.14,
     bevelEnabled: true,
     bevelSegments: 4,
     steps: 1,
@@ -193,33 +160,60 @@ function Scene() {
     bevelThickness: 0.02
   }), [])
 
+  // Satellite node details
+  const nodes = useMemo(() => [
+    { label: 'SHOWROOM', path: '/portfolio', key: 'showroom', angle: 0 },
+    { label: 'THE LAB', path: '/services', key: 'lab', angle: (2 * Math.PI) / 5 },
+    { label: 'PLAYGROUND', path: '/playground', key: 'playground', angle: (4 * Math.PI) / 5 },
+    { label: 'STORY', path: '/about', key: 'story', angle: (6 * Math.PI) / 5 },
+    { label: 'CONTACT', path: '/contact', key: 'contact', angle: (8 * Math.PI) / 5 }
+  ], [])
+
+  const orbitRadius = 2.3
+
+  // Unified Frame Loop: single loop updates K logo, lights, and all 5 orbiting nodes
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
+    
+    // 1. Rotate Central Logo
     if (kRef.current) {
-      // Rotation in response to time
-      kRef.current.rotation.y = time * 0.18
+      kRef.current.rotation.y = time * 0.15
       kRef.current.rotation.x = Math.sin(time * 0.3) * 0.06
     }
+
+    // 2. Rotate Spotlight
     if (lightRef.current) {
-      // Orbiting spotlight sweeps facet reflections
       lightRef.current.position.x = Math.cos(time * 1.5) * 2.3
       lightRef.current.position.y = Math.sin(time * 1.5) * 2.3
     }
+
+    // 3. Rotate Orbiting Satellite Nodes
+    nodes.forEach((node, idx) => {
+      const angle = node.angle + time * 0.055
+      const group = nodeRefs.current[idx]
+      const mesh = nodeMeshRefs.current[idx]
+      
+      if (group) {
+        group.position.x = Math.cos(angle) * orbitRadius
+        group.position.y = Math.sin(angle) * orbitRadius
+        group.position.z = Math.sin(angle * 2.2) * 0.15
+      }
+      
+      if (mesh) {
+        mesh.rotation.y = time * 0.4
+      }
+    })
   })
 
-  // Satellite configuration
-  const satelliteNodes = [
-    { label: 'SHOWROOM', path: '/portfolio', angle: 0 },
-    { label: 'THE LAB', path: '/services', angle: (2 * Math.PI) / 5 },
-    { label: 'PLAYGROUND', path: '/playground', angle: (4 * Math.PI) / 5 },
-    { label: 'STORY', path: '/about', angle: (6 * Math.PI) / 5 },
-    { label: 'CONTACT', path: '/contact', angle: (8 * Math.PI) / 5 }
-  ]
+  const handleNodeClick = (path) => {
+    playClick()
+    navigate(path)
+  }
 
   return (
     <>
       {/* Light rigging */}
-      <pointLight ref={lightRef} intensity={3.0} color="#00f0ff" distance={8} />
+      <pointLight ref={lightRef} intensity={3.5} color="#00f0ff" distance={8} />
       <pointLight position={[-3, -3, 3]} intensity={2.0} color="#ffffff" distance={10} />
       <directionalLight position={[0, 4, 4]} intensity={1} color="#ffffff" />
 
@@ -229,44 +223,101 @@ function Scene() {
       {/* Central Diamond K Assembly */}
       <group 
         ref={kRef}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
+        onPointerOver={() => setLogoHovered(true)}
+        onPointerOut={() => setLogoHovered(false)}
       >
-        {/* Double-crossed planes displaying transparent Diamond K texture (gives 3D volumetric view) */}
-        <mesh scale={[1.25, 1.8, 1]}>
+        {/* Crossed planes displaying transparent Diamond K texture */}
+        {/* CRITICAL FIX: depthWrite={false} prevents transparent edges from clipping the background and other planes */}
+        <mesh scale={[1.3, 1.85, 1]}>
           <planeGeometry />
-          <meshBasicMaterial map={logoTexture} transparent={true} alphaTest={0.05} side={THREE.DoubleSide} depthWrite={true} />
+          <meshBasicMaterial 
+            map={logoTexture} 
+            transparent={true} 
+            depthWrite={false} 
+            side={THREE.DoubleSide} 
+          />
         </mesh>
         
-        <mesh scale={[1.25, 1.8, 1]} rotation={[0, Math.PI / 2, 0]}>
+        <mesh scale={[1.3, 1.85, 1]} rotation={[0, Math.PI / 2, 0]}>
           <planeGeometry />
-          <meshBasicMaterial map={logoTexture} transparent={true} alphaTest={0.05} side={THREE.DoubleSide} depthWrite={true} />
+          <meshBasicMaterial 
+            map={logoTexture} 
+            transparent={true} 
+            depthWrite={false} 
+            side={THREE.DoubleSide} 
+          />
         </mesh>
 
-        {/* Crystalline wireframe K outline (inside the crossed planes) */}
+        {/* Crystalline wireframe K outline */}
         <mesh>
           <extrudeGeometry args={[kShape, extrudeSettings]} />
           <meshStandardMaterial
             wireframe
-            color={hovered ? '#00f0ff' : '#ffffff'}
-            emissive={hovered ? '#00f0ff' : '#222222'}
-            emissiveIntensity={hovered ? 2.2 : 0.6}
+            color={logoHovered ? '#00f0ff' : '#ffffff'}
+            emissive={logoHovered ? '#00f0ff' : '#222222'}
+            emissiveIntensity={logoHovered ? 2.5 : 0.6}
             transparent
-            opacity={0.45}
+            opacity={0.4}
           />
         </mesh>
       </group>
 
-      {/* Satellite orbit path rendering */}
-      {satelliteNodes.map((node, i) => (
-        <OrbitingNode
-          key={i}
-          label={node.label}
-          path={node.path}
-          baseAngle={node.angle}
-          radius={2.3}
-        />
-      ))}
+      {/* Orbiting Satellite Nodes */}
+      {nodes.map((node, idx) => {
+        const isHovered = hoveredNode === node.key
+        return (
+          <group 
+            key={node.key}
+            ref={(el) => (nodeRefs.current[idx] = el)}
+          >
+            <mesh
+              ref={(el) => (nodeMeshRefs.current[idx] = el)}
+              onPointerOver={(e) => {
+                e.stopPropagation()
+                setHoveredNode(node.key)
+                playTick()
+              }}
+              onPointerOut={(e) => {
+                e.stopPropagation()
+                setHoveredNode(null)
+              }}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleNodeClick(node.path)
+              }}
+              scale={isHovered ? 1.35 : 1.0}
+            >
+              <sphereGeometry args={[0.15, 32, 32]} />
+              <meshPhysicalMaterial
+                roughness={0.05}
+                metalness={0.9}
+                color={isHovered ? '#00f0ff' : '#ffffff'}
+                transmission={0.8}
+                thickness={0.6}
+                clearcoat={1.0}
+              />
+            </mesh>
+
+            {/* HTML label badge */}
+            <Html distanceFactor={6} center>
+              <div
+                onClick={() => handleNodeClick(node.path)}
+                onMouseEnter={() => {
+                  setHoveredNode(node.key)
+                  playTick()
+                }}
+                onMouseLeave={() => setHoveredNode(null)}
+                className={`font-mono text-[9px] px-2.5 py-0.5 rounded bg-[#050507]/90 border border-zinc-900 text-[#8e8e93] uppercase tracking-widest transition-all duration-300 select-none cursor-pointer hover:text-[#00f0ff] hover:border-[#00f0ff] hover:shadow-[0_0_12px_rgba(0,240,255,0.45)] hover:scale-105 ${
+                  isHovered ? 'text-[#00f0ff] border-[#00f0ff] shadow-[0_0_12px_rgba(0,240,255,0.45)] scale-105 z-20' : 'z-10'
+                }`}
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                {label}
+              </div>
+            </Html>
+          </group>
+        )
+      })}
     </>
   )
 }
