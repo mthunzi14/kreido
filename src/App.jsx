@@ -6,11 +6,7 @@ import Navbar           from './components/Navbar'
 import Footer           from './components/Footer'
 import CustomCursor     from './components/CustomCursor'
 import ScrollProgressBar from './components/ScrollProgressBar'
-import WhatsAppButton   from './components/WhatsAppButton'
 import ScrollToTop      from './components/ScrollToTop'
-import ScrollToTopButton from './components/ScrollToTopButton'
-import FloatingActionBar from './components/FloatingActionBar'
-import Preloader        from './components/Preloader'
 
 import Home      from './pages/Home'
 import Services  from './pages/Services'
@@ -41,7 +37,6 @@ function AnimatedRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Preloader />
       {/* Progress bar must be inside BrowserRouter for useLocation */}
       <ScrollProgressBar />
       <ScrollToTop />
@@ -51,9 +46,6 @@ export default function App() {
         <AnimatedRoutes />
       </main>
       <Footer />
-      <WhatsAppButton />
-      <ScrollToTopButton />
-      <FloatingActionBar />
     </BrowserRouter>
   )
 }
