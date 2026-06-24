@@ -118,23 +118,33 @@ a {
 
 /* ── Custom Cursor ── */
 .custom-cursor {
-  width: 8px;
-  height: 8px;
-  background: var(--text-platinum);
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  background-image: url('/hand-cursor.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
   position: fixed;
   top: 0;
   left: 0;
   pointer-events: none;
   z-index: 99999;
-  transform: translate(-50%, -50%);
-  transition: transform 0.1s ease, width 0.15s ease, height 0.15s ease, background-color 0.15s ease;
-  mix-blend-mode: difference;
+  transform: translate(-20%, -20%);
+  transition: transform 0.1s ease, width 0.15s ease, height 0.15s ease, filter 0.15s ease;
 }
 .custom-cursor.cursor-hover {
-  width: 24px;
-  height: 24px;
-  background-color: var(--accent-cyan);
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
+}
+
+.cursor-trail {
+  position: fixed;
+  background: var(--text-titanium);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99998;
+  transform: translate(-50%, -50%);
 }
 
 /* ── X-Ray Blueprint Grid Overlay ── */
