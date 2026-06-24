@@ -44,11 +44,11 @@ export default function Home() {
         />
 
         {/* Brand Header Overlay */}
-        <div className="absolute top-6 left-6 sm:top-8 sm:left-8 z-30 select-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
+        <div className="absolute top-4 left-4 sm:top-5 sm:left-5 z-30 select-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
           <img 
             src="/logo-text-silver.png" 
             alt="KREIDO — Your Vision, Engineered" 
-            className="w-48 sm:w-56 h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+            className="w-[150px] sm:w-[180px] h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
           />
         </div>
 

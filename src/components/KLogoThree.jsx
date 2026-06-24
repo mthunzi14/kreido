@@ -437,8 +437,21 @@ function Scene() {
 }
 
 export default function KLogoThree() {
+  const [hasInteracted, setHasInteracted] = useState(false)
+
+  // Auto-fade out instruction after 7 seconds if no interaction
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHasInteracted(true)
+    }, 7000)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
-    <div className="w-full h-full cursor-grab active:cursor-grabbing relative z-10">
+    <div 
+      className="w-full h-full cursor-grab active:cursor-grabbing relative z-10"
+      onPointerDown={() => setHasInteracted(true)}
+    >
       <Canvas
         camera={{ position: [0, 0, 3.6], fov: 45 }}
         gl={{ antialias: true, alpha: true }}
@@ -454,8 +467,23 @@ export default function KLogoThree() {
           enablePan={false} 
           dampingFactor={0.05} 
           rotateSpeed={0.5}
+          autoRotate={true}
+          autoRotateSpeed={0.25}
         />
       </Canvas>
+
+      {/* Floating instructional drag-hint in the bottom center */}
+      <div 
+        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex items-center gap-2.5 transition-all duration-1000 ${
+          hasInteracted ? 'opacity-0 scale-95 translate-y-2' : 'opacity-60 scale-100 translate-y-0'
+        }`}
+      >
+        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#f5f5f7]">
+          Drag to explore galaxy
+        </span>
+        {/* Pulsing visual indicator */}
+        <div className="w-1.5 h-1.5 rounded-full bg-[#f5f5f7] animate-pulse" />
+      </div>
     </div>
   )
 }
