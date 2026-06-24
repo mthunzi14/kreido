@@ -166,81 +166,6 @@ function Starfield() {
   )
 }
 
-function RocketShip() {
-  const meshRef = useRef()
-  const texture = useTexture('/node-rocket.png')
-  const [active, setActive] = useState(false)
-  const startTimeRef = useRef(0)
-  
-  const [path, setPath] = useState({
-    start: new THREE.Vector3(-6, -3, -1),
-    end: new THREE.Vector3(6, 3, 1)
-  })
-
-  // Schedule flights periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Define randomized fly-by paths across the screen plane
-      const paths = [
-        { start: new THREE.Vector3(-7, -3.5, -1), end: new THREE.Vector3(7, 3.5, 1) },
-        { start: new THREE.Vector3(7, -2.5, 0.5), end: new THREE.Vector3(-7, 2.5, -0.5) },
-        { start: new THREE.Vector3(-6.5, 3.5, -1.5), end: new THREE.Vector3(6.5, -3.5, 1.5) }
-      ]
-      const chosen = paths[Math.floor(Math.random() * paths.length)]
-      setPath(chosen)
-      setActive(true)
-      startTimeRef.current = -1
-    }, 22000) // triggers roughly every 22 seconds
-    return () => clearInterval(interval)
-  }, [])
-
-  useFrame((state) => {
-    if (!active) return
-    
-    const time = state.clock.getElapsedTime()
-    if (startTimeRef.current === -1) {
-      startTimeRef.current = time
-    }
-
-    const duration = 4.5 // 4.5 seconds to glide across the viewport
-    const elapsed = time - startTimeRef.current
-    const progress = elapsed / duration
-
-    if (progress >= 1.0) {
-      setActive(false)
-      return
-    }
-
-    if (meshRef.current) {
-      meshRef.current.position.lerpVectors(path.start, path.end, progress)
-      
-      // Calculate travel direction in 2D projection
-      const dx = path.end.x - path.start.x
-      const dy = path.end.y - path.start.y
-      const angle = Math.atan2(dy, dx)
-
-      // Billboard to face the camera, and rotate on local Z to match travel direction
-      meshRef.current.quaternion.copy(state.camera.quaternion)
-      const localRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), angle - Math.PI / 2)
-      meshRef.current.quaternion.multiply(localRotation)
-    }
-  })
-
-  if (!active) return null
-
-  return (
-    <mesh ref={meshRef} scale={[0.42, 0.42, 1]}>
-      <planeGeometry />
-      <meshBasicMaterial
-        map={texture}
-        transparent={true}
-        depthWrite={false}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  )
-}
-
 function Scene() {
   const kRef = useRef()
   const coreMeshRef = useRef()
@@ -267,9 +192,36 @@ function Scene() {
     { label: "LET'S CREATE", path: '/contact', key: 'lets-create', texture: contactTexture }
   ], [portfolioTexture, blueprintsTexture, playgroundTexture, contactTexture])
 
-  // Track the orbital angles of each node independently (spaced exactly at 90 deg / Math.PI/2 intervals)
-  const initialAngles = useMemo(() => [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2], [])
-  const anglesRef = useRef([...initialAngles])
+  // Physics-based starting positions & velocities to distribute them symmetrically and give high-energy initial orbits
+  const [initialStates] = useMemo(() => {
+    const states = []
+    const k = 0.45 // Spring constant matching physics update
+    const R = 1.3  // Initial orbit radius
+    const angles = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2]
+    
+    for (let i = 0; i < 4; i++) {
+      const theta = angles[i]
+      const pos = new THREE.Vector3(
+        R * Math.cos(theta),
+        R * Math.sin(theta),
+        (Math.random() - 0.5) * 0.2
+      )
+      
+      // Calculate orbital velocity (tangential) + add a dynamic offset for complex elliptical shapes
+      const speed = Math.sqrt(k) * R * 1.5
+      const vel = new THREE.Vector3(
+        -speed * Math.sin(theta) + (Math.random() - 0.5) * 0.25,
+        speed * Math.cos(theta) + (Math.random() - 0.5) * 0.25,
+        (Math.random() - 0.5) * 0.25
+      )
+      states.push({ pos, vel })
+    }
+    return [states]
+  }, [])
+
+  // Refs to track physics positions and velocities smoothly across frame ticks without React re-renders
+  const positionsRef = useRef(initialStates.map(s => s.pos.clone()))
+  const velocitiesRef = useRef(initialStates.map(s => s.vel.clone()))
   const lastTimeRef = useRef(0)
 
   // Single Frame Loop: updates core rotation, sweeping pointlight, and orbiting node positions/billboarding
@@ -280,7 +232,7 @@ function Scene() {
     if (lastTimeRef.current === 0) {
       lastTimeRef.current = time
     }
-    const delta = time - lastTimeRef.current
+    const delta = Math.min(time - lastTimeRef.current, 0.1) // clamp delta to prevent giant jumps on tab unfocus
     lastTimeRef.current = time
     
     // Billboard central core to face the camera, and spin on its local Z-axis (vortex/turbine effect)
@@ -297,44 +249,70 @@ function Scene() {
       lightRef.current.position.y = Math.sin(time * 1.5) * 2.3
     }
 
-    // Orbit & Billboard Satellite Nodes along the exact same tilted galactic plane (0.4 X, 0.1 Z)
+    // Physics Engine: update positions and velocities under central spring force, bouncing off screen bounds
     nodes.forEach((node, idx) => {
       const group = nodeRefs.current[idx]
       const mesh = meshRefs.current[idx]
       
       if (group) {
-        // If this specific node is NOT hovered, increment its angle
         if (hoveredNode !== node.key) {
-          anglesRef.current[idx] += delta * 0.035
+          const pos = positionsRef.current[idx]
+          const vel = velocitiesRef.current[idx]
+          
+          // Spring force pulls the nodes towards the central Kreido logo
+          const k = 0.45
+          const ax = -k * pos.x
+          const ay = -k * pos.y
+          const az = -k * pos.z
+          
+          vel.x += ax * delta
+          vel.y += ay * delta
+          vel.z += az * delta
+          
+          pos.x += vel.x * delta
+          pos.y += vel.y * delta
+          pos.z += vel.z * delta
+          
+          // Screen edge boundaries calculation at current depth
+          const aspect = state.size.width / state.size.height
+          const viewportHeight = 2 * Math.tan((45 * Math.PI) / 360) * 3.6
+          const viewportWidth = viewportHeight * aspect
+          
+          // Boundary limits with padding so nodes stay fully on screen
+          const padding = 0.35
+          const limitX = viewportWidth / 2 - padding
+          const limitY = viewportHeight / 2 - padding
+          
+          // DVD-style bounce mechanics in screen space (X and Y)
+          if (pos.x > limitX) {
+            pos.x = limitX
+            vel.x = -Math.abs(vel.x)
+          } else if (pos.x < -limitX) {
+            pos.x = -limitX
+            vel.x = Math.abs(vel.x)
+          }
+          
+          if (pos.y > limitY) {
+            pos.y = limitY
+            vel.y = -Math.abs(vel.y)
+          } else if (pos.y < -limitY) {
+            pos.y = -limitY
+            vel.y = Math.abs(vel.y)
+          }
+          
+          group.position.copy(pos)
+        } else {
+          // Hovered: Freeze node coordinates in place
+          positionsRef.current[idx].copy(group.position)
         }
-        
-        const angle = anglesRef.current[idx]
-        
-        // Calculate responsive orbitRadius dynamically so nodes always stay on screen
-        const aspect = state.size.width / state.size.height
-        const orbitRadius = aspect < 1.0 ? Math.max(0.8, 1.25 * aspect) : 1.35
-        
-        const rawX = Math.cos(angle) * orbitRadius
-        const rawY = Math.sin(angle) * orbitRadius
-        
-        // Rotate local disc coordinate by matched tilt angles:
-        // 1. Tilt X-axis by 0.4 radians
-        const y1 = rawY * Math.cos(0.4)
-        const z1 = rawY * Math.sin(0.4)
-        
-        // 2. Tilt Z-axis by 0.1 radians
-        const x2 = rawX * Math.cos(0.1) - y1 * Math.sin(0.1)
-        const y2 = rawX * Math.sin(0.1) + y1 * Math.cos(0.1)
-        
-        group.position.set(x2, y2, z1)
         
         // Force nodes to always face the camera viewport (billboard effect)
         group.quaternion.copy(state.camera.quaternion)
 
-        // Interpolate scale and apply cyan pulsing effect on the mesh
+        // Interpolate scale and apply clean, periodic cyan pulsing effect on the mesh
         if (mesh) {
           const isHovered = hoveredNode === node.key
-          const targetScale = isHovered ? 1.38 : 1.05
+          const targetScale = isHovered ? 0.6 : 0.45 // Match the Kreido logo size (0.45)
           mesh.scale.setScalar(targetScale)
 
           if (mesh.material) {
@@ -342,8 +320,14 @@ function Scene() {
               mesh.material.emissive.set('#bfeeff')
               mesh.material.emissiveIntensity = 0.8
             } else {
+              // Rare periodic pulse: every 8s, pulse for 2s, otherwise remain un-illuminated
+              const cycle = (time + idx * 2.0) % 8.0
+              let emissiveIntensity = 0.0
+              if (cycle < 2.0) {
+                emissiveIntensity = 0.35 * Math.sin((cycle / 2.0) * Math.PI)
+              }
               mesh.material.emissive.set('#00f0ff')
-              mesh.material.emissiveIntensity = 0.15 + 0.15 * Math.sin(time * 3.0 + idx * 1.5)
+              mesh.material.emissiveIntensity = emissiveIntensity
             }
           }
         }
@@ -365,9 +349,6 @@ function Scene() {
 
       {/* Starfield Background */}
       <Starfield />
-
-      {/* Randomized Flying Rocket Ship */}
-      <RocketShip />
 
       {/* Central System Core Assembly (Basic material to prevent turning black, Z-axis spin, billboarded) */}
       <group ref={kRef}>
