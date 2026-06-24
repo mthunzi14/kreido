@@ -469,8 +469,8 @@ body.developer-mode .exploded-panel {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 52px; /* Default size for icon container when closed (20% larger) */
-  height: 52px;
+  width: 47px; /* Default size for icon container when closed (approx 10% smaller) */
+  height: 47px;
   border-radius: var(--morph-r-closed);
   overflow: hidden;
   background: transparent;
@@ -509,8 +509,8 @@ body.developer-mode .exploded-panel {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 52px; /* 52px (20% larger) */
-  height: 52px;
+  width: 47px;
+  height: 47px;
   display: flex;
   align-items: center;
   justify-content: center;

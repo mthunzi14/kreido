@@ -162,6 +162,41 @@ export function AudioProvider({ children }) {
     chime(1568.0, 0.16)
   }
 
+  // Synthesize a sci-fi wormhole/warp sweep sound
+  const playWarpSound = () => {
+    initAudio()
+    if (isMuted || !audioCtxRef.current) return
+
+    const ctx = audioCtxRef.current
+    if (ctx.state === 'suspended') ctx.resume()
+
+    const osc = ctx.createOscillator()
+    const gainNode = ctx.createGain()
+    const filter = ctx.createBiquadFilter()
+
+    osc.type = 'sawtooth'
+    // Start low, pitch-up exponentially to resemble acceleration, then drop off
+    osc.frequency.setValueAtTime(80, ctx.currentTime)
+    osc.frequency.exponentialRampToValueAtTime(1000, ctx.currentTime + 1.2)
+    osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 2.5)
+
+    filter.type = 'lowpass'
+    filter.frequency.setValueAtTime(200, ctx.currentTime)
+    filter.frequency.exponentialRampToValueAtTime(2500, ctx.currentTime + 1.2)
+    filter.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 2.5)
+
+    gainNode.gain.setValueAtTime(0.015, ctx.currentTime)
+    gainNode.gain.linearRampToValueAtTime(0.20, ctx.currentTime + 0.8)
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 2.5)
+
+    osc.connect(filter)
+    filter.connect(gainNode)
+    gainNode.connect(masterGainRef.current)
+
+    osc.start()
+    osc.stop(ctx.currentTime + 2.5)
+  }
+
   // Fetch, process, and play Shaun's voice lines with custom ducking & cooldowns
   const playVoice = (clipName) => {
     initAudio()
@@ -275,6 +310,7 @@ export function AudioProvider({ children }) {
         playToggle,
         playSuccess,
         playVoice,
+        playWarpSound,
       }}
     >
       {children}

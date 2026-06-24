@@ -6,6 +6,9 @@ import { useAudio } from './context/AudioContext'
 import ScrollProgressBar from './components/ScrollProgressBar'
 import ScrollToTop      from './components/ScrollToTop'
 import CustomCursor     from './components/CustomCursor'
+import KConfigurator    from './components/KConfigurator'
+
+import { ConfiguratorProvider } from './context/ConfiguratorContext'
 
 import Home      from './pages/Home'
 import Services  from './pages/Services'
@@ -43,6 +46,7 @@ function AppContent() {
       {location.pathname !== '/' && <ScrollProgressBar />}
       <ScrollToTop />
       <CustomCursor />
+      <KConfigurator />
 
       {/* Global Brand Header Logo (Top-Left Home link present on all pages) */}
       <div 
@@ -88,8 +92,10 @@ function AppContentLayout({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <ConfiguratorProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </ConfiguratorProvider>
   )
 }

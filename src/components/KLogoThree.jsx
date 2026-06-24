@@ -3,12 +3,14 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Html, useTexture } from '@react-three/drei'
 import { useNavigate } from 'react-router-dom'
 import { useAudio } from '../context/AudioContext'
+import { useConfigurator } from '../context/ConfiguratorContext'
 import * as THREE from 'three'
 
 // GPU Shaders for high-performance pulsing & drifting star particles with smooth near-camera fade and radial gradients
 const vertexShader = `
   attribute vec3 aColor;
   uniform float uTime;
+  uniform float uWarp;
   uniform vec3 uCoreColor;
   uniform vec3 uOuterColor;
   attribute float aPhase;
@@ -22,9 +24,19 @@ const vertexShader = `
     pos.y += cos(uTime * 0.15 + aPhase) * 0.3;
     pos.z += sin(uTime * 0.25 + aPhase) * 0.3;
     
-    // GPU-based gradient color interpolation based on distance from center
+    // Vortex spiral twisting on stars on GPU during warp
     float dist = length(pos);
-    vec3 gradientColor = mix(uCoreColor, uOuterColor, clamp(dist / 9.5, 0.0, 1.0));
+    float twist = uWarp * 3.5 * (1.5 / (dist + 0.4));
+    float cosA = cos(twist);
+    float sinA = sin(twist);
+    float newX = pos.x * cosA - pos.z * sinA;
+    float newZ = pos.x * sinA + pos.z * cosA;
+    pos.x = newX;
+    pos.z = newZ;
+    
+    // GPU-based gradient color interpolation based on distance from center
+    float newDist = length(pos);
+    vec3 gradientColor = mix(uCoreColor, uOuterColor, clamp(newDist / 9.5, 0.0, 1.0));
     
     // Maintain the star-class variations from the original attribute color
     float intensity = 0.35 + 0.65 * ((aColor.r + aColor.g + aColor.b) / 3.0);
@@ -76,6 +88,7 @@ const fragmentShader = `
 const coreVertexShader = `
   uniform float uTime;
   uniform float uIntensity;
+  uniform float uWarp;
   uniform vec3 uCoreColor;
   uniform vec3 uOuterColor;
   attribute float aPhase;
@@ -87,8 +100,9 @@ const coreVertexShader = `
     vec3 pos = position;
     float dist = length(pos.xz);
     
-    // Slow galactic core swirl rotation
-    float angle = uTime * 0.04 * (1.5 / (dist + 0.8));
+    // Slow galactic core swirl rotation + dynamic warping twist
+    float twist = uWarp * 4.5 * (1.5 / (dist + 0.15));
+    float angle = uTime * 0.04 * (1.5 / (dist + 0.8)) + twist;
     float cosA = cos(angle);
     float sinA = sin(angle);
     float newX = pos.x * cosA - pos.z * sinA;
@@ -165,7 +179,7 @@ const GALAXY_THEMES = {
   }
 }
 
-function Starfield({ count, coreColor, outerColor }) {
+function Starfield({ count, coreColor, outerColor, uWarp }) {
   const starsRef = useRef()
 
   const [positions, colors, phases] = useMemo(() => {
@@ -224,9 +238,10 @@ function Starfield({ count, coreColor, outerColor }) {
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
+    uWarp: uWarp,
     uCoreColor: { value: new THREE.Color() },
     uOuterColor: { value: new THREE.Color() }
-  }), [])
+  }), [uWarp])
 
   // Update uniforms when props change
   useEffect(() => {
@@ -238,7 +253,7 @@ function Starfield({ count, coreColor, outerColor }) {
     const time = state.clock.getElapsedTime()
     uniforms.uTime.value = time
     if (starsRef.current) {
-      starsRef.current.rotation.y = time * 0.015
+      starsRef.current.rotation.y = time * 0.015 + uWarp.value * 0.5
     }
   })
 
@@ -270,7 +285,7 @@ function Starfield({ count, coreColor, outerColor }) {
   )
 }
 
-function MilkyWayCore({ coreColor, outerColor, intensity }) {
+function MilkyWayCore({ coreColor, outerColor, intensity, uWarp }) {
   const coreRef = useRef()
   
   // Optimized core gas particle count for 360 FPS / 240 Hz performance
@@ -352,12 +367,32 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
   const coreMeshRef = useRef()
   const lightRef = useRef()
   const navigate = useNavigate()
-  const { playTick, playClick } = useAudio()
+  const { playTick, playClick, playWarpSound } = useAudio()
 
   const nodeRefs = useRef([])
   const meshRefs = useRef([])
   const [hoveredNode, setHoveredNode] = useState(null)
   const [coreHovered, setCoreHovered] = useState(false)
+
+  // Cooldown track & animation refs inside Scene
+  const lastWarpTimeRef = useRef(0)
+  const warpActiveRef = useRef(false)
+  const warpStartRef = useRef(0)
+  const warpUniformRef = useRef({ value: 0 })
+
+  const handleLogoClick = (e) => {
+    e.stopPropagation()
+    const now = Date.now()
+    if (now - lastWarpTimeRef.current < 300000) {
+      // Cooldown active, play short click/tick
+      playTick()
+      return
+    }
+    lastWarpTimeRef.current = now
+    warpActiveRef.current = true
+    warpStartRef.current = performance.now()
+    playWarpSound()
+  }
 
   // Load the system core logo and custom node textures
   const logoTexture = useTexture('/logo-core-v5.png?v=8')
@@ -428,6 +463,28 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
     }
     const delta = Math.min(time - lastTimeRef.current, 0.1)
     lastTimeRef.current = time
+
+    // Calculate warp progress on GPU (bell curve over 2.5s)
+    let currentWarp = 0
+    if (warpActiveRef.current) {
+      const elapsed = (performance.now() - warpStartRef.current) / 1000
+      if (elapsed < 2.5) {
+        currentWarp = Math.sin((elapsed / 2.5) * Math.PI)
+      } else {
+        warpActiveRef.current = false
+      }
+    }
+    warpUniformRef.current.value = currentWarp
+
+    // Drive camera dolly zoom & perspective warping directly (high refresh rate friendly)
+    state.camera.position.z = 3.6 - currentWarp * 0.8
+    state.camera.fov = 45 - currentWarp * 10
+    state.camera.updateProjectionMatrix()
+
+    // Spin camera dynamically during warp
+    if (state.controls) {
+      state.controls.autoRotateSpeed = 0.25 + currentWarp * 15.0
+    }
     
     if (kRef.current) {
       kRef.current.quaternion.copy(state.camera.quaternion)
@@ -437,7 +494,7 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
       const currentScale = coreMeshRef.current.scale.x
       const newScale = THREE.MathUtils.lerp(currentScale, targetCoreScale, 0.15)
       coreMeshRef.current.scale.set(newScale, newScale, 1)
-      coreMeshRef.current.rotation.z = time * 0.15
+      coreMeshRef.current.rotation.z = time * 0.15 + currentWarp * 1.5
     }
 
     if (lightRef.current) {
@@ -534,10 +591,10 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
       <directionalLight position={[0, 4, 4]} intensity={1.2} color="#ffffff" />
 
       {/* Starfield Background */}
-      <Starfield count={starCount} coreColor={coreColor} outerColor={outerColor} />
+      <Starfield count={starCount} coreColor={coreColor} outerColor={outerColor} uWarp={warpUniformRef.current} />
 
       {/* Volumetric Milky Way Gaseous Core */}
-      <MilkyWayCore coreColor={coreColor} outerColor={outerColor} intensity={nebulaIntensity} />
+      <MilkyWayCore coreColor={coreColor} outerColor={outerColor} intensity={nebulaIntensity} uWarp={warpUniformRef.current} />
 
       {/* Central System Core Assembly */}
       <group ref={kRef}>
@@ -546,6 +603,7 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
           scale={[0.45, 0.45, 1]}
           onPointerOver={() => setCoreHovered(true)}
           onPointerOut={() => setCoreHovered(false)}
+          onClick={handleLogoClick}
         >
           <planeGeometry />
           <shaderMaterial 
@@ -638,34 +696,10 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
 export default function KLogoThree() {
   const [showHint, setShowHint] = useState(true)
   
-  // Settings Deck States
-  const [theme, setTheme] = useState('silver')
-  // Default star count is 70,000
-  const [starDensity, setStarDensity] = useState(70000)
-  // Default gas core density is 5% (0.05)
-  const [nebulaIntensity, setNebulaIntensity] = useState(0.05)
-  const [deckOpen, setDeckOpen] = useState(false)
-  const deckRef = useRef(null)
-
-  // Click outside to close the configurator deck
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (deckOpen && deckRef.current && !deckRef.current.contains(event.target)) {
-        setDeckOpen(false)
-      }
-    }
-    document.addEventListener('pointerdown', handleClickOutside)
-    return () => {
-      document.removeEventListener('pointerdown', handleClickOutside)
-    }
-  }, [deckOpen])
+  // Settings Deck States from Global Context Provider
+  const { theme, starDensity, nebulaIntensity } = useConfigurator()
 
   const activeTheme = GALAXY_THEMES[theme]
-
-  // Dispatch custom theme change events to synchronize the global header logo
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent('galaxy-theme-change', { detail: { theme } }))
-  }, [theme])
 
   useEffect(() => {
     // Initial fade out after 7 seconds
@@ -754,98 +788,6 @@ export default function KLogoThree() {
           alt="Drag icon" 
           className={getDragSymbolStyles()}
         />
-      </div>
-
-      {/* Collapsible Glassmorphic Interactive Control Deck using transitions.dev morphing design */}
-      <div 
-        ref={deckRef}
-        className="t-morph shadow-[0_10px_35px_rgba(0,0,0,0.6)]" 
-        data-open={deckOpen ? "true" : "false"}
-        style={deckOpen ? {
-          background: 'linear-gradient(135deg, rgba(39,39,42,0.98) 0%, rgba(24,24,27,0.98) 50%, rgba(9,9,11,0.98) 100%)',
-          borderColor: 'rgba(161, 161, 170, 0.35)'
-        } : {}}
-      >
-        {/* Toggle Settings Icon button (Enlarged by 20%, borderless and transparent when closed) */}
-        <button 
-          onClick={() => setDeckOpen(true)}
-          className="t-morph-toggle-btn group pointer-events-auto"
-          title="CREATOR CONFIGURATOR"
-        >
-          <img 
-            src="/toggle-symbol-silver.png?v=8" 
-            alt="Toggle Settings"
-            className="w-10 h-10 sm:w-11 sm:h-11 object-contain filter drop-shadow-[0_0_5px_rgba(255,255,255,0.2)] group-hover:scale-110 group-hover:rotate-12 transition-all duration-300"
-          />
-        </button>
-
-        {/* Settings panel contents (slid-in and revealed smoothly upon expansion) */}
-        <div className="t-morph-deck flex flex-col gap-4.5">
-          <div className="flex justify-between items-center border-b border-zinc-700/50 pb-2">
-            <span className="font-mono text-[9px] tracking-widest text-zinc-300 uppercase select-none font-bold">CREATOR CONFIGURATOR</span>
-            <button 
-              onClick={() => setDeckOpen(false)}
-              className="text-zinc-400 hover:text-zinc-200 font-mono text-[8px] uppercase tracking-wider transition-colors duration-200 cursor-pointer"
-            >
-              [ Close ]
-            </button>
-          </div>
-          
-          {/* Theme selection */}
-          <div className="flex flex-col gap-1.5">
-            <span className="font-mono text-[8px] tracking-wider text-zinc-500 uppercase select-none">Gradient Colorway</span>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.entries(GALAXY_THEMES).map(([key, t]) => {
-                const isSelected = theme === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setTheme(key)}
-                    className={`font-mono text-[8px] py-1.5 px-2 rounded border uppercase tracking-widest transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${
-                      isSelected 
-                        ? 'bg-gradient-to-b from-[#18181b] to-[#27272a] border-zinc-400 text-white shadow-[inset_0_2px_4px_rgba(0,0,0,0.85),0_1px_1px_rgba(255,255,255,0.12)] font-semibold' 
-                        : 'bg-gradient-to-b from-[#2a2a30] to-[#161619] border-zinc-800/85 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300 shadow-[0_1.5px_3px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.05)]'
-                    }`}
-                    style={isSelected ? { borderColor: activeTheme.glowColor } : {}}
-                  >
-                    {isSelected && (
-                      <span 
-                        className="w-1.5 h-1.5 rounded-full shadow-[0_0_6px_currentColor] animate-pulse"
-                        style={{ 
-                          backgroundColor: activeTheme.glowColor,
-                          color: activeTheme.glowColor 
-                        }}
-                      />
-                    )}
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          
-          {/* Nebula density */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex justify-between items-center">
-              <span className="font-mono text-[8px] tracking-wider text-zinc-500 uppercase select-none">Nebular Gas Core</span>
-              <span className="font-mono text-[8px] text-zinc-400 select-none font-bold">{Math.round(nebulaIntensity * 100)}%</span>
-            </div>
-            <div className="relative flex items-center bg-zinc-950/80 border border-zinc-800/85 rounded-full px-2.5 py-1.5 h-6">
-              <input 
-                type="range" 
-                min="0" 
-                max="1.0" 
-                step="0.02"
-                value={nebulaIntensity} 
-                onChange={(e) => setNebulaIntensity(parseFloat(e.target.value))}
-                className="w-full cursor-pointer metallic-slider"
-                style={{
-                  accentColor: activeTheme.glowColor
-                }}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
