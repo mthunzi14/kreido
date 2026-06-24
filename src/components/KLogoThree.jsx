@@ -192,11 +192,11 @@ function Scene() {
     { label: "LET'S CREATE", path: '/contact', key: 'lets-create', texture: contactTexture }
   ], [portfolioTexture, blueprintsTexture, playgroundTexture, contactTexture])
 
-  // Physics-based starting positions & velocities to distribute them symmetrically and give high-energy initial orbits
+  // Physics-based starting positions & velocities to distribute them symmetrically and give slow, majestic initial orbits
   const [initialStates] = useMemo(() => {
     const states = []
-    const k = 0.45 // Spring constant matching physics update
-    const R = 1.3  // Initial orbit radius
+    const k = 0.04 // Very gentle spring constant for slow, majestic orbits
+    const R = 1.35  // Initial orbit radius
     const angles = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2]
     
     for (let i = 0; i < 4; i++) {
@@ -204,15 +204,15 @@ function Scene() {
       const pos = new THREE.Vector3(
         R * Math.cos(theta),
         R * Math.sin(theta),
-        (Math.random() - 0.5) * 0.2
+        (Math.random() - 0.5) * 0.1
       )
       
-      // Calculate orbital velocity (tangential) + add a dynamic offset for complex elliptical shapes
-      const speed = Math.sqrt(k) * R * 1.5
+      // Calculate slow orbital velocity (tangential) matching natural frequency
+      const speed = Math.sqrt(k) * R
       const vel = new THREE.Vector3(
-        -speed * Math.sin(theta) + (Math.random() - 0.5) * 0.25,
-        speed * Math.cos(theta) + (Math.random() - 0.5) * 0.25,
-        (Math.random() - 0.5) * 0.25
+        -speed * Math.sin(theta) + (Math.random() - 0.5) * 0.02,
+        speed * Math.cos(theta) + (Math.random() - 0.5) * 0.02,
+        (Math.random() - 0.5) * 0.02
       )
       states.push({ pos, vel })
     }
@@ -259,8 +259,8 @@ function Scene() {
           const pos = positionsRef.current[idx]
           const vel = velocitiesRef.current[idx]
           
-          // Spring force pulls the nodes towards the central Kreido logo
-          const k = 0.45
+          // Spring force pulls the nodes towards the central Kreido logo (very gentle pull for slow orbits)
+          const k = 0.04
           const ax = -k * pos.x
           const ay = -k * pos.y
           const az = -k * pos.z
@@ -309,7 +309,7 @@ function Scene() {
         // Force nodes to always face the camera viewport (billboard effect)
         group.quaternion.copy(state.camera.quaternion)
 
-        // Interpolate scale and apply clean, periodic cyan pulsing effect on the mesh
+        // Interpolate scale and apply desaturated silver-blue periodic pulsing on the mesh
         if (mesh) {
           const isHovered = hoveredNode === node.key
           const targetScale = isHovered ? 0.6 : 0.45 // Match the Kreido logo size (0.45)
@@ -317,16 +317,16 @@ function Scene() {
 
           if (mesh.material) {
             if (isHovered) {
-              mesh.material.emissive.set('#bfeeff')
-              mesh.material.emissiveIntensity = 0.8
+              mesh.material.emissive.set('#ffffff') // clean silver/white highlight on hover
+              mesh.material.emissiveIntensity = 0.5
             } else {
-              // Rare periodic pulse: every 8s, pulse for 2s, otherwise remain un-illuminated
-              const cycle = (time + idx * 2.0) % 8.0
+              // Rare periodic desaturated silver glimmer: every 20s, glimmer softly for 2s per node
+              const cycle = (time + idx * 4.0) % 20.0
               let emissiveIntensity = 0.0
               if (cycle < 2.0) {
-                emissiveIntensity = 0.35 * Math.sin((cycle / 2.0) * Math.PI)
+                emissiveIntensity = 0.2 * Math.sin((cycle / 2.0) * Math.PI)
               }
-              mesh.material.emissive.set('#00f0ff')
+              mesh.material.emissive.set('#d5e2e6') // desaturated light silver-blue/steel glow
               mesh.material.emissiveIntensity = emissiveIntensity
             }
           }
