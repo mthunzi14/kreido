@@ -474,15 +474,17 @@ export default function KLogoThree() {
 
       {/* Floating instructional drag-hint in the bottom center */}
       <div 
-        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex items-center gap-2.5 transition-all duration-1000 ${
-          hasInteracted ? 'opacity-0 scale-95 translate-y-2' : 'opacity-60 scale-100 translate-y-0'
+        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex flex-col items-center gap-2 transition-all duration-1000 ${
+          hasInteracted ? 'opacity-0 scale-95 translate-y-2' : 'opacity-70 scale-100 translate-y-0'
         }`}
       >
-        <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-[#f5f5f7]">
-          Drag to explore galaxy
-        </span>
+        <img 
+          src="/drag-hint-silver.png" 
+          alt="Drag to explore KREIDO" 
+          className="w-48 sm:w-56 h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
+        />
         {/* Pulsing visual indicator */}
-        <div className="w-1.5 h-1.5 rounded-full bg-[#f5f5f7] animate-pulse" />
+        <div className="w-1.5 h-1.5 rounded-full bg-[#ffffff] opacity-80 animate-pulse" />
       </div>
     </div>
   )
