@@ -179,11 +179,11 @@ function Scene() {
   const [coreHovered, setCoreHovered] = useState(false)
 
   // Load the system core logo and custom node textures
-  const logoTexture = useTexture('/logo-core-v5.png')
-  const portfolioTexture = useTexture('/node-portfolio.png')
-  const blueprintsTexture = useTexture('/node-blueprints.png')
-  const playgroundTexture = useTexture('/node-playground.png')
-  const contactTexture = useTexture('/node-contact.png')
+  const logoTexture = useTexture('/logo-core-v5.png?v=4')
+  const portfolioTexture = useTexture('/node-portfolio.png?v=4')
+  const blueprintsTexture = useTexture('/node-blueprints.png?v=4')
+  const playgroundTexture = useTexture('/node-playground.png?v=4')
+  const contactTexture = useTexture('/node-contact.png?v=4')
 
   // Satellite node configuration: 4 nodes symmetrically arranged in a 90-degree cross
   const nodes = useMemo(() => [
@@ -486,24 +486,21 @@ export default function KLogoThree() {
 
       {/* Floating instructional drag-hint in the bottom center */}
       <div 
-        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex flex-col items-center gap-2.5 transition-all duration-1000 ${
+        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex flex-col items-center gap-3.5 transition-all duration-1000 ${
           showHint ? 'opacity-70 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
         }`}
       >
-        <div className="flex items-center gap-2">
-          <img 
-            src="/drag-symbol-silver.png" 
-            alt="Drag icon" 
-            className="w-3.5 h-3.5 object-contain filter drop-shadow-[0_0_4px_rgba(255,255,255,0.15)]"
-          />
-          <img 
-            src="/drag-hint-silver.png" 
-            alt="Drag to explore KREIDO" 
-            className="w-[144px] sm:w-[175px] h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
-          />
-        </div>
-        {/* Pulsing visual indicator */}
-        <div className="w-1.5 h-1.5 rounded-full bg-[#ffffff] opacity-80 animate-pulse" />
+        <img 
+          src="/drag-hint-silver.png?v=4" 
+          alt="Drag to explore KREIDO" 
+          className="w-[144px] sm:w-[175px] h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
+        />
+        {/* Drag Symbol (positioned below the text, rescaled and pulsing slowly) */}
+        <img 
+          src="/drag-symbol-silver.png?v=4" 
+          alt="Drag icon" 
+          className="w-5 h-5 sm:w-6 sm:h-6 object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.2)] animate-pulse"
+        />
       </div>
     </div>
   )

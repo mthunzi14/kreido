@@ -51,7 +51,7 @@ function AppContent() {
         className="fixed top-4 left-4 sm:top-5 sm:left-5 z-50 select-none cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
       >
         <img 
-          src="/logo-text-silver.png" 
+          src="/logo-text-silver.png?v=4" 
           alt="KREIDO — Your Vision, Engineered" 
           className="w-[115px] sm:w-[138px] h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
         />
