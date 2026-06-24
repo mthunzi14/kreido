@@ -7,6 +7,7 @@ import * as THREE from 'three'
 
 // GPU Shaders for high-performance pulsing & drifting star particles
 const vertexShader = `
+  attribute vec3 color;
   uniform float uTime;
   attribute float aPhase;
   varying vec3 vColor;
@@ -165,8 +166,8 @@ function Scene() {
   const nodeMeshRefs = useRef([])
   const [hoveredNode, setHoveredNode] = useState(null)
 
-  // Cache buster ?v=3 forces browser to reload the transparent logoPNG instead of cached black-box version
-  const logoTexture = useTexture('/logo-flat.png?v=3')
+  // Cache buster by referencing the renamed transparent v4 logo file
+  const logoTexture = useTexture('/logo-flat-v4.png')
 
   // Satellite node configuration
   const nodes = useMemo(() => [
