@@ -7,7 +7,7 @@ export default function Contact() {
   const { playTick, playClick, playSuccess } = useAudio()
 
   useEffect(() => {
-    document.title = 'Contact — Kreido'
+    document.title = "Let's Create — Kreido"
     document.querySelector('meta[name="description"]')?.setAttribute(
       'content',
       'Transmit your system requirements to Mthunzi at Kreido.'
@@ -17,7 +17,7 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault()
     playSuccess()
-    alert('System Signal Transmitted. Mthunzi will contact you within 24 hours.')
+    alert('System Request Transmitted. Mthunzi will contact you within 24 hours.')
   }
 
   return (
@@ -30,14 +30,14 @@ export default function Contact() {
             top: '40%', 
             left: '50%', 
             transform: 'translateX(-50%)',
-            background: `radial-gradient(circle, rgba(120,75,255,0.2) 0%, rgba(0,240,255,0.1) 100%)`
+            background: `radial-gradient(circle, rgba(213,213,217,0.12) 0%, rgba(191,238,255,0.06) 100%)`
           }}
         />
 
         <div className="relative z-10 text-center mb-8">
-          <span className="tech-label">[ CONTACT TERMINAL // SIGNAL INTAKE ]</span>
+          <span className="tech-label">[ CREATE TERMINAL // SYSTEM INTAKE ]</span>
           <h1 className="text-3xl sm:text-4xl font-black mt-2 uppercase tracking-tighter">
-            Transmit Signal
+            Let's Create
           </h1>
         </div>
 
@@ -56,7 +56,7 @@ export default function Contact() {
                 required
                 onFocus={playTick}
                 placeholder="Enter your name"
-                className="w-full bg-zinc-950 border border-zinc-900 rounded p-3 text-xs text-white focus:outline-none focus:border-[#00f0ff] font-mono transition-colors duration-300"
+                className="w-full bg-zinc-950 border border-zinc-900 rounded p-3 text-xs text-white focus:outline-none focus:border-[#bfeeff] font-mono transition-colors duration-300"
               />
             </div>
 
@@ -67,7 +67,7 @@ export default function Contact() {
                 required
                 onFocus={playTick}
                 placeholder="Enter your email"
-                className="w-full bg-zinc-950 border border-zinc-900 rounded p-3 text-xs text-white focus:outline-none focus:border-[#00f0ff] font-mono transition-colors duration-300"
+                className="w-full bg-zinc-950 border border-zinc-900 rounded p-3 text-xs text-white focus:outline-none focus:border-[#bfeeff] font-mono transition-colors duration-300"
               />
             </div>
 
@@ -78,7 +78,7 @@ export default function Contact() {
                 required
                 onFocus={playTick}
                 placeholder="Describe your digital system vision"
-                className="w-full bg-zinc-950 border border-zinc-900 rounded p-3 text-xs text-white focus:outline-none focus:border-[#00f0ff] font-mono transition-colors duration-300"
+                className="w-full bg-zinc-950 border border-zinc-900 rounded p-3 text-xs text-white focus:outline-none focus:border-[#bfeeff] font-mono transition-colors duration-300"
               />
             </div>
 
@@ -86,9 +86,9 @@ export default function Contact() {
               type="submit"
               onClick={playClick}
               onMouseEnter={playTick}
-              className="w-full py-4 bg-[#f5f5f7] text-[#050507] font-mono font-bold text-center block rounded uppercase text-xs hover:bg-[#00f0ff] transition-all duration-300 cursor-none"
+              className="w-full py-4 bg-[#f5f5f7] text-[#050507] font-mono font-bold text-center block rounded uppercase text-xs hover:bg-[#bfeeff] transition-all duration-300 cursor-none"
             >
-              [ Transmit Signal ]
+              [ Transmit Request ]
             </button>
           </form>
         </div>

@@ -21,7 +21,7 @@ export default function Home() {
             top: '50%', 
             left: '50%', 
             transform: 'translate(-50%, -50%)',
-            background: 'radial-gradient(circle, rgba(120,75,255,0.18) 0%, rgba(0,240,255,0.08) 100%)' 
+            background: 'radial-gradient(circle, rgba(213,213,217,0.12) 0%, rgba(191,238,255,0.04) 100%)' 
           }}
         />
 

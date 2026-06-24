@@ -16,8 +16,8 @@
   --border-platinum: rgba(245, 245, 247, 0.05);
   --border-active: rgba(245, 245, 247, 0.2);
   
-  --accent-prismatic: linear-gradient(135deg, rgba(255, 60, 172, 0.15) 0%, rgba(120, 75, 255, 0.15) 50%, rgba(0, 240, 255, 0.15) 100%);
-  --accent-cyan: #00f0ff;
+  --accent-prismatic: linear-gradient(135deg, rgba(213, 213, 217, 0.12) 0%, rgba(142, 142, 147, 0.12) 50%, rgba(191, 238, 255, 0.12) 100%);
+  --accent-cyan: #bfeeff;
   
   --font-heading: 'Syne', sans-serif;
   --font-body: 'DM Sans', sans-serif;

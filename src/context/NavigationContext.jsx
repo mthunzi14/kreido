@@ -8,7 +8,7 @@ export function NavigationProvider({ children }) {
   const [transitionDirection, setTransitionDirection] = useState('forward')
 
   // List of valid tabs in our 3D Command Center
-  const validTabs = ['home', 'showroom', 'lab', 'pitch', 'playground', 'story']
+  const validTabs = ['home', 'portfolio', 'lab', 'pitch', 'playground', 'story']
 
   const setActiveTab = (tab) => {
     if (!validTabs.includes(tab) || tab === activeTab || isTransitioning) return

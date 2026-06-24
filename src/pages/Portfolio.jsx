@@ -92,12 +92,12 @@ const syncBooking = async (appointment) => {
           style={{ 
             top: '40%', 
             left: '10%', 
-            background: `radial-gradient(circle, rgba(120,75,255,0.2) 0%, rgba(0,240,255,0.1) 100%)`
+            background: `radial-gradient(circle, rgba(213,213,217,0.12) 0%, rgba(191,238,255,0.06) 100%)`
           }}
         />
 
         <div className="relative z-10 text-center mb-16">
-          <span className="tech-label">[ SHOWROOM // SELECTED DIGITAL ASSETS ]</span>
+          <span className="tech-label">[ PORTFOLIO // SELECTED DIGITAL ASSETS ]</span>
           <h1 className="text-4xl sm:text-6xl font-black mt-4 uppercase tracking-tighter">
             Selected Works
           </h1>

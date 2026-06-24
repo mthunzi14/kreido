@@ -5,10 +5,9 @@ import { useAudio } from '../context/AudioContext'
 
 const navLinks = [
   { label: 'Core', to: '/' },
-  { label: 'Showroom', to: '/portfolio' },
-  { label: 'The Lab', to: '/services' },
-  { label: 'Playground', to: '/playground' },
-  { label: 'Story', to: '/about' }
+  { label: 'Portfolio', to: '/portfolio' },
+  { label: 'Blueprints', to: '/services' },
+  { label: 'Playground', to: '/playground' }
 ]
 
 export default function Navbar() {

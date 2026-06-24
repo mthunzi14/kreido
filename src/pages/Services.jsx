@@ -105,12 +105,12 @@ export default function Services() {
           style={{ 
             top: '10%', 
             right: '20%', 
-            background: `radial-gradient(circle, rgba(120,75,255,0.2) 0%, rgba(0,240,255,0.1) 100%)`
+            background: `radial-gradient(circle, rgba(213,213,217,0.12) 0%, rgba(191,238,255,0.06) 100%)`
           }}
         />
 
         <div className="relative z-10 text-center mb-16">
-          <span className="tech-label">[ THE LAB // ARCHITECTURAL TIERS ]</span>
+          <span className="tech-label">[ BLUEPRINTS // ARCHITECTURAL TIERS ]</span>
           <h1 className="text-4xl sm:text-6xl font-black mt-4 uppercase tracking-tighter">
             System Packaging
           </h1>
