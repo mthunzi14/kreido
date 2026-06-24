@@ -1,68 +1,92 @@
-import React, { useRef, useState, useMemo, useEffect } from 'react'
+import React, { useRef, useState, useMemo, Suspense } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Html } from '@react-three/drei'
+import { OrbitControls, Html, useTexture } from '@react-three/drei'
 import { useNavigate } from 'react-router-dom'
 import { useAudio } from '../context/AudioContext'
 import * as THREE from 'three'
 
-// Helper to generate a soft circular particle texture dynamically (100% reliable, zero network requests)
-function createCircleTexture() {
-  const canvas = document.createElement('canvas')
-  canvas.width = 16
-  canvas.height = 16
-  const ctx = canvas.getContext('2d')
+// GPU Shaders for high-performance pulsing & drifting star particles
+const vertexShader = `
+  uniform float uTime;
+  attribute float aPhase;
+  varying vec3 vColor;
+  varying float vTwinkle;
 
-  const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8)
-  grad.addColorStop(0, 'rgba(255, 255, 255, 1)')
-  grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)')
-  grad.addColorStop(1, 'rgba(255, 255, 255, 0)')
+  void main() {
+    vColor = color;
+    
+    // Twinkling pulse on GPU (unique frequency and offset per star)
+    float speed = 2.2 + mod(aPhase, 2.8);
+    vTwinkle = 0.38 + 0.62 * sin(uTime * speed + aPhase);
+    
+    // Floating cosmic drift (drift positions slowly in 3D wave space)
+    vec3 pos = position;
+    pos.x += sin(uTime * 0.45 + aPhase) * 0.18;
+    pos.y += cos(uTime * 0.35 + aPhase) * 0.18;
+    pos.z += sin(uTime * 0.55 + aPhase) * 0.18;
+    
+    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * mvPosition;
+    
+    // Size attenuation: scale point sizes based on perspective depth and twinkle pulse
+    gl_PointSize = (15.0 * vTwinkle) / -mvPosition.z;
+  }
+`
 
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, 16, 16)
+const fragmentShader = `
+  varying vec3 vColor;
+  varying float vTwinkle;
 
-  const texture = new THREE.CanvasTexture(canvas)
-  return texture
-}
+  void main() {
+    // Mathematically render a soft circle inside the point square
+    vec2 coord = gl_PointCoord - vec2(0.5);
+    float dist = length(coord);
+    
+    if (dist > 0.5) {
+      discard;
+    }
+    
+    // Soft exponential radial falloff representing a shining star
+    float alpha = smoothstep(0.5, 0.04, dist) * vTwinkle * 0.9;
+    
+    gl_FragColor = vec4(vColor, alpha);
+  }
+`
 
-// Galaxy background starfield (white, titanium gray, and icy light blue stars)
-function Starfield({ circleTexture }) {
+function Starfield() {
   const starsRef = useRef()
-  const count = 2800
+  const count = 3000 // 1,500 disk stars + 1,500 sphere stars
 
-  // 1. Generate positions, colors, phases, speeds, and drift vectors
-  const [positions, basePositions, colors, baseColors, phases, speeds, drifts] = useMemo(() => {
+  // Generate coordinates, colors, and random phases
+  const [positions, colors, phases] = useMemo(() => {
     const positions = new Float32Array(count * 3)
-    const basePositions = new Float32Array(count * 3)
     const colors = new Float32Array(count * 3)
-    const baseColors = new Float32Array(count * 3)
     const phases = new Float32Array(count)
-    const speeds = new Float32Array(count)
-    const drifts = new Float32Array(count * 3)
-
-    // Palette: Pure White, Titanium Gray, Ice Blue, Soft Cyan
+    
+    // Colors: Pure White, Cyber Light Blue, Titanium Gray, Platinum Silver
     const themeColors = [
       new THREE.Color('#ffffff'), // White
-      new THREE.Color('#8e8e93'), // Titanium Gray
-      new THREE.Color('#e5f7ff'), // Ice Blue
-      new THREE.Color('#d0f0ff')  // Soft Cyan
+      new THREE.Color('#bfeeff'), // Very Light Blue
+      new THREE.Color('#5e5e63'), // Titanium Gray
+      new THREE.Color('#d5d5d9')  // Platinum Silver
     ]
 
     for (let i = 0; i < count; i++) {
       let x, y, z
       
-      if (i < 1300) {
+      if (i < 1500) {
         // Layer A: Spiral Disc
         const r = Math.random() * 8.0 + 1.2
         const arm = Math.random() < 0.5 ? 0 : Math.PI
-        const spin = r * 0.65
+        const spin = r * 0.55
         const angle = arm + spin + (Math.random() - 0.5) * 0.35
         
         x = Math.cos(angle) * r
         z = Math.sin(angle) * r
-        y = (Math.random() - 0.5) * 1.1 * Math.exp(-r / 3.0)
+        y = (Math.random() - 0.5) * 1.2 * Math.exp(-r / 3.0)
       } else {
-        // Layer B: Spherical Envelope (Background stars surrounding everything)
-        const r = Math.random() * 9.5 + 6.5
+        // Layer B: Spherical Envelope (twinkles everywhere when camera rotates)
+        const r = Math.random() * 10.0 + 7.0
         const u = Math.random()
         const v = Math.random()
         const theta = u * 2.0 * Math.PI
@@ -73,88 +97,58 @@ function Starfield({ circleTexture }) {
         z = r * Math.cos(phi)
       }
 
-      const idx = i * 3
-      positions[idx] = x
-      positions[idx + 1] = y
-      positions[idx + 2] = z
-
-      basePositions[idx] = x
-      basePositions[idx + 1] = y
-      basePositions[idx + 2] = z
+      positions[i * 3] = x
+      positions[i * 3 + 1] = y
+      positions[i * 3 + 2] = z
 
       const color = themeColors[Math.floor(Math.random() * themeColors.length)]
-      colors[idx] = color.r
-      colors[idx + 1] = color.g
-      colors[idx + 2] = color.b
+      colors[i * 3] = color.r
+      colors[i * 3 + 1] = color.g
+      colors[i * 3 + 2] = color.b
 
-      baseColors[idx] = color.r
-      baseColors[idx + 1] = color.g
-      baseColors[idx + 2] = color.b
-
-      // Twinkle & Drift attributes
-      phases[i] = Math.random() * Math.PI * 2
-      speeds[i] = Math.random() * 0.9 + 0.3
-      
-      // Individual drift vectors
-      drifts[idx] = (Math.random() - 0.5) * 0.3
-      drifts[idx + 1] = (Math.random() - 0.5) * 0.3
-      drifts[idx + 2] = (Math.random() - 0.5) * 0.3
+      phases[i] = Math.random() * 1000.0 // Phase offsets
     }
 
-    return [positions, basePositions, colors, baseColors, phases, speeds, drifts]
+    return [positions, colors, phases]
   }, [])
 
-  // 2. High-Performance CPU Animation: update positions & colors in real-time
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 }
+  }), [])
+
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
-    if (!starsRef.current) return
-
-    const geo = starsRef.current.geometry
-    const posAttr = geo.attributes.position
-    const colorAttr = geo.attributes.color
-
-    const arr = posAttr.array
-    const colArr = colorAttr.array
-
-    for (let i = 0; i < count; i++) {
-      const idx = i * 3
-      const phase = phases[i]
-      const speed = speeds[i]
-
-      // Apply slow, organic drift/sway to each star
-      arr[idx] = basePositions[idx] + drifts[idx] * Math.sin(time * speed + phase)
-      arr[idx + 1] = basePositions[idx + 1] + drifts[idx + 1] * Math.cos(time * speed + phase)
-      arr[idx + 2] = basePositions[idx + 2] + drifts[idx + 2] * Math.sin(time * speed * 0.5 + phase)
-
-      // Individual twinkling: modulate color brightness
-      const pulse = 0.65 + 0.35 * Math.sin(time * (speed * 1.6) + phase)
-      colArr[idx] = baseColors[idx] * pulse
-      colArr[idx + 1] = baseColors[idx + 1] * pulse
-      colArr[idx + 2] = baseColors[idx + 2] * pulse
+    // Update shader clock
+    uniforms.uTime.value = time
+    if (starsRef.current) {
+      // Slow rotation of the background universe
+      starsRef.current.rotation.y = time * 0.008
     }
-
-    posAttr.needsUpdate = true
-    colorAttr.needsUpdate = true
-
-    // Slow group rotation
-    starsRef.current.rotation.y = time * 0.008
   })
 
   return (
     <points ref={starsRef}>
       <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+        />
+        <bufferAttribute
+          attach="attributes-color"
+          args={[colors, 3]}
+        />
+        <bufferAttribute
+          attach="attributes-aPhase"
+          args={[phases, 1]}
+        />
       </bufferGeometry>
-      <pointsMaterial
-        size={0.065} // Large circular particles
-        vertexColors
-        transparent
-        opacity={0.8}
-        map={circleTexture}
-        sizeAttenuation={true}
+      <shaderMaterial
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+        transparent={true}
         depthWrite={false}
-        blending={THREE.AdditiveBlending} // Glowing overlaps
+        blending={THREE.AdditiveBlending}
       />
     </points>
   )
@@ -163,6 +157,7 @@ function Starfield({ circleTexture }) {
 function Scene() {
   const kRef = useRef()
   const lightRef = useRef()
+  const [logoHovered, setLogoHovered] = useState(false)
   const navigate = useNavigate()
   const { playTick, playClick } = useAudio()
 
@@ -170,21 +165,10 @@ function Scene() {
   const nodeMeshRefs = useRef([])
   const [hoveredNode, setHoveredNode] = useState(null)
 
-  // Asynchronously load the flat Diamond K texture using TextureLoader to prevent Suspense blank screens
-  const [logoTexture, setLogoTexture] = useState(null)
-  
-  useEffect(() => {
-    const loader = new THREE.TextureLoader()
-    loader.load('/logo-flat.png', (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace
-      setLogoTexture(texture)
-    })
-  }, [])
+  // Cache buster ?v=3 forces browser to reload the transparent logoPNG instead of cached black-box version
+  const logoTexture = useTexture('/logo-flat.png?v=3')
 
-  // Create circle texture for the stars and halos
-  const circleTexture = useMemo(() => createCircleTexture(), [])
-
-  // Satellite node details
+  // Satellite node configuration
   const nodes = useMemo(() => [
     { label: 'SHOWROOM', path: '/portfolio', key: 'showroom', angle: 0 },
     { label: 'THE LAB', path: '/services', key: 'lab', angle: (2 * Math.PI) / 5 },
@@ -193,25 +177,25 @@ function Scene() {
     { label: 'CONTACT', path: '/contact', key: 'contact', angle: (8 * Math.PI) / 5 }
   ], [])
 
-  const orbitRadius = 2.4
+  const orbitRadius = 2.3
 
-  // Unified Frame Loop: updates central K rotation, light orbits, and node positions
+  // Single Frame Loop: updates logo rotation, sweeping pointlight, and orbiting node groups
   useFrame((state) => {
     const time = state.clock.getElapsedTime()
     
     // Rotate K Logo
     if (kRef.current) {
-      kRef.current.rotation.y = time * 0.16
-      kRef.current.rotation.x = Math.sin(time * 0.25) * 0.06
+      kRef.current.rotation.y = time * 0.15
+      kRef.current.rotation.x = Math.sin(time * 0.35) * 0.05
     }
 
     // Rotate Spotlight
     if (lightRef.current) {
-      lightRef.current.position.x = Math.cos(time * 1.4) * 2.3
-      lightRef.current.position.y = Math.sin(time * 1.4) * 2.3
+      lightRef.current.position.x = Math.cos(time * 1.4) * 2.2
+      lightRef.current.position.y = Math.sin(time * 1.4) * 2.2
     }
 
-    // Orbit Satellite Nodes
+    // Rotate Node Groups
     nodes.forEach((node, idx) => {
       const angle = node.angle + time * 0.05
       const group = nodeRefs.current[idx]
@@ -220,12 +204,11 @@ function Scene() {
       if (group) {
         group.position.x = Math.cos(angle) * orbitRadius
         group.position.y = Math.sin(angle) * orbitRadius
-        // Floating wave offset + drift sway
-        group.position.z = Math.sin(angle * 2.2) * 0.15 + Math.cos(time * 0.8 + node.angle) * 0.05
+        group.position.z = Math.sin(angle * 2.4) * 0.12
       }
       
       if (mesh) {
-        mesh.rotation.y = time * 0.4
+        mesh.rotation.y = time * 0.3
       }
     })
   })
@@ -240,39 +223,49 @@ function Scene() {
       {/* Light rigging */}
       <pointLight ref={lightRef} intensity={3.5} color="#00f0ff" distance={8} />
       <pointLight position={[-3, -3, 3]} intensity={2.0} color="#ffffff" distance={10} />
-      <directionalLight position={[0, 4, 4]} intensity={1.2} color="#ffffff" />
+      <directionalLight position={[0, 4, 4]} intensity={1} color="#ffffff" />
 
-      {/* Universe star background */}
-      <Starfield circleTexture={circleTexture} />
+      {/* Galaxy Starfield */}
+      <Starfield />
 
-      {/* Central Diamond K Logo Assembly */}
-      {logoTexture && (
-        <group ref={kRef}>
-          {/* Double-crossed planes displaying transparent Diamond K texture */}
-          {/* depthWrite={false} resolves transparency clipping blocks completely */}
-          <mesh scale={[1.3, 1.85, 1]}>
-            <planeGeometry />
-            <meshBasicMaterial 
-              map={logoTexture} 
-              transparent={true} 
-              depthWrite={false} 
-              side={THREE.DoubleSide} 
-            />
-          </mesh>
-          
-          <mesh scale={[1.3, 1.85, 1]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry />
-            <meshBasicMaterial 
-              map={logoTexture} 
-              transparent={true} 
-              depthWrite={false} 
-              side={THREE.DoubleSide} 
-            />
-          </mesh>
-        </group>
-      )}
+      {/* Central Diamond K Assembly */}
+      <group 
+        ref={kRef}
+        onPointerOver={() => setLogoHovered(true)}
+        onPointerOut={() => setLogoHovered(false)}
+      >
+        {/* Double-crossed planes displaying transparent Diamond K texture */}
+        {/* Using meshStandardMaterial reacts to lights so specular sweeps illuminate chrome/glass blocks */}
+        <mesh scale={[1.3, 1.85, 1]}>
+          <planeGeometry />
+          <meshStandardMaterial 
+            map={logoTexture} 
+            transparent={true} 
+            depthWrite={false} 
+            side={THREE.DoubleSide}
+            roughness={0.1}
+            metalness={0.8}
+            emissive={logoHovered ? '#003344' : '#000000'}
+            emissiveIntensity={logoHovered ? 0.4 : 0.0}
+          />
+        </mesh>
+        
+        <mesh scale={[1.3, 1.85, 1]} rotation={[0, Math.PI / 2, 0]}>
+          <planeGeometry />
+          <meshStandardMaterial 
+            map={logoTexture} 
+            transparent={true} 
+            depthWrite={false} 
+            side={THREE.DoubleSide}
+            roughness={0.1}
+            metalness={0.8}
+            emissive={logoHovered ? '#003344' : '#000000'}
+            emissiveIntensity={logoHovered ? 0.4 : 0.0}
+          />
+        </mesh>
+      </group>
 
-      {/* Orbiting Satellite Star Nodes */}
+      {/* Orbiting Satellite Nodes */}
       {nodes.map((node, idx) => {
         const isHovered = hoveredNode === node.key
         return (
@@ -280,7 +273,6 @@ function Scene() {
             key={node.key}
             ref={(el) => (nodeRefs.current[idx] = el)}
           >
-            {/* Satellite core sphere (star center) */}
             <mesh
               ref={(el) => (nodeMeshRefs.current[idx] = el)}
               onPointerOver={(e) => {
@@ -296,32 +288,18 @@ function Scene() {
                 e.stopPropagation()
                 handleNodeClick(node.path)
               }}
-              scale={isHovered ? 1.4 : 1.0}
+              scale={isHovered ? 1.35 : 1.0}
             >
-              <sphereGeometry args={[0.08, 16, 16]} />
-              <meshBasicMaterial
+              <sphereGeometry args={[0.15, 32, 32]} />
+              <meshPhysicalMaterial
+                roughness={0.05}
+                metalness={0.9}
                 color={isHovered ? '#00f0ff' : '#ffffff'}
+                transmission={0.8}
+                thickness={0.6}
+                clearcoat={1.0}
               />
             </mesh>
-
-            {/* Glowing star flare halo surrounding the sphere */}
-            <mesh scale={[0.42, 0.42, 1]}>
-              <planeGeometry />
-              <meshBasicMaterial
-                map={circleTexture}
-                transparent={true}
-                depthWrite={false}
-                color={isHovered ? '#00f0ff' : '#ffffff'}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-
-            {/* Local point light glowing outwards from each node star */}
-            <pointLight
-              intensity={isHovered ? 3.0 : 1.2}
-              color={isHovered ? '#00f0ff' : '#ffffff'}
-              distance={2.5}
-            />
 
             {/* HTML label badge */}
             <Html distanceFactor={6} center>
@@ -356,7 +334,9 @@ export default function KLogoThree() {
       >
         <ambientLight intensity={0.4} />
         
-        <Scene />
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
 
         <OrbitControls 
           enableZoom={false} 
