@@ -117,8 +117,8 @@ a {
 
 /* ── Custom Cursor ── */
 .custom-cursor {
-  width: 27px;
-  height: 27px;
+  width: 30px;
+  height: 30px;
   background-image: url('/hand-cursor.png');
   background-size: contain;
   background-repeat: no-repeat;
@@ -132,8 +132,8 @@ a {
   transition: transform 0.1s ease, width 0.15s ease, height 0.15s ease, filter 0.15s ease;
 }
 .custom-cursor.cursor-hover {
-  width: 35px;
-  height: 35px;
+  width: 39px;
+  height: 39px;
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
 }
 
