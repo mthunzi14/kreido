@@ -476,14 +476,21 @@ function Scene({ theme, coreColor, outerColor, starCount, nebulaIntensity }) {
     }
     warpUniformRef.current.value = currentWarp
 
-    // Drive camera dolly zoom & perspective warping directly (high refresh rate friendly)
-    state.camera.position.z = 3.6 - currentWarp * 0.8
-    state.camera.fov = 45 - currentWarp * 10
-    state.camera.updateProjectionMatrix()
-
-    // Spin camera dynamically during warp
-    if (state.controls) {
-      state.controls.autoRotateSpeed = 0.25 + currentWarp * 15.0
+    // Drive camera perspective warping via FOV zoom directly (high refresh rate friendly)
+    if (warpActiveRef.current) {
+      state.camera.fov = 45 - currentWarp * 18.0
+      state.camera.updateProjectionMatrix()
+      if (state.controls) {
+        state.controls.autoRotateSpeed = 0.25 + currentWarp * 15.0
+      }
+    } else {
+      if (state.camera.fov !== 45) {
+        state.camera.fov = 45
+        state.camera.updateProjectionMatrix()
+      }
+      if (state.controls && state.controls.autoRotateSpeed !== 0.25) {
+        state.controls.autoRotateSpeed = 0.25
+      }
     }
     
     if (kRef.current) {
