@@ -4,7 +4,7 @@ import KLogoThree from '../components/KLogoThree'
 
 export default function Home() {
   useEffect(() => {
-    document.title = 'Kreido — Creative Engineering Studio'
+    document.title = 'Kreido — Your Vision, Engineered.'
     document.querySelector('meta[name="description"]')?.setAttribute(
       'content',
       'Kreido is a custom creative engineering studio building high-fidelity digital assets, custom web systems, and brand environments.'
@@ -44,7 +44,7 @@ export default function Home() {
         />
 
         {/* Brand Header Overlay */}
-        <div className="absolute top-8 left-8 z-30 pointer-events-none select-none">
+        <div className="absolute top-3 left-3 sm:top-5 sm:left-5 z-30 select-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
           <img 
             src="/logo-text-silver.png" 
             alt="KREIDO — Your Vision, Engineered" 

@@ -326,13 +326,13 @@ function Scene() {
           if (mesh.material) {
             if (isHovered) {
               mesh.material.emissive.set('#ffffff') // clean silver/white highlight on hover
-              mesh.material.emissiveIntensity = 0.25 // desaturated to let silver textures show clearly
+              mesh.material.emissiveIntensity = 0.15 // further desaturated to keep details clear
             } else {
               // Rare periodic desaturated silver glimmer: every 24s, glimmer softly for 2s per node
               const cycle = (time + idx * 6.0) % 24.0
               let emissiveIntensity = 0.0
               if (cycle < 2.0) {
-                emissiveIntensity = 0.12 * Math.sin((cycle / 2.0) * Math.PI)
+                emissiveIntensity = 0.06 * Math.sin((cycle / 2.0) * Math.PI) // subtle, premium glimmer
               }
               mesh.material.emissive.set('#d5e2e6') // desaturated light silver-blue/steel glow
               mesh.material.emissiveIntensity = emissiveIntensity
