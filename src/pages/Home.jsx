@@ -43,14 +43,7 @@ export default function Home() {
           }}
         />
 
-        {/* Brand Header Overlay */}
-        <div className="absolute top-4 left-4 sm:top-5 sm:left-5 z-30 select-none cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
-          <img 
-            src="/logo-text-silver.png" 
-            alt="KREIDO — Your Vision, Engineered" 
-            className="w-[110px] sm:w-[132px] h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
-          />
-        </div>
+
 
         {/* Full-screen 3D Canvas */}
         <div className="absolute inset-0 w-full h-full z-10">

@@ -44,14 +44,27 @@ function AppContent() {
       <ScrollToTop />
       <CustomCursor />
 
-      {/* Floating High-Tech Back Button (replacing navbar on subpages) */}
+      {/* Global Brand Header Logo (Top-Left Home link present on all pages) */}
+      <div 
+        onClick={() => { playClick(); navigate('/'); }}
+        onMouseEnter={playTick}
+        className="fixed top-4 left-4 sm:top-5 sm:left-5 z-50 select-none cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95"
+      >
+        <img 
+          src="/logo-text-silver.png" 
+          alt="KREIDO — Your Vision, Engineered" 
+          className="w-[115px] sm:w-[138px] h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+        />
+      </div>
+
+      {/* Floating High-Tech Back Button (shifted right to avoid logo collision on subpages) */}
       {location.pathname !== '/' && (
         <button
           onClick={() => { playClick(); navigate('/'); }}
           onMouseEnter={playTick}
-          className="fixed top-6 left-6 z-50 font-mono text-[9px] uppercase tracking-widest text-[#bfeeff] bg-[#050507]/90 backdrop-blur border border-zinc-900 hover:border-[#bfeeff] hover:shadow-[0_0_12px_rgba(191,238,255,0.25)] px-4 py-2.5 rounded transition-all duration-300 flex items-center gap-2 cursor-pointer"
+          className="fixed top-5 left-36 sm:left-40 z-50 font-mono text-[9px] uppercase tracking-widest text-[#bfeeff] bg-[#050507]/95 backdrop-blur border border-zinc-900 hover:border-[#bfeeff] hover:shadow-[0_0_12px_rgba(191,238,255,0.25)] px-4 py-2.5 rounded transition-all duration-300 flex items-center gap-2 cursor-pointer"
         >
-          <span>←</span> [ BACK_TO_CORE ]
+          <span>←</span> [ BACK ]
         </button>
       )}
 
