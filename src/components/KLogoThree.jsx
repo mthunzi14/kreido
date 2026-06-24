@@ -437,20 +437,32 @@ function Scene() {
 }
 
 export default function KLogoThree() {
-  const [hasInteracted, setHasInteracted] = useState(false)
+  const [showHint, setShowHint] = useState(true)
 
-  // Auto-fade out instruction after 7 seconds if no interaction
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setHasInteracted(true)
+    // Initial fade out after 7 seconds
+    const initialTimer = setTimeout(() => {
+      setShowHint(false)
     }, 7000)
-    return () => clearTimeout(timer)
+
+    // Repeat every 30 seconds: pop up for 5 seconds and fade away
+    const interval = setInterval(() => {
+      setShowHint(true)
+      setTimeout(() => {
+        setShowHint(false)
+      }, 5000)
+    }, 30000)
+
+    return () => {
+      clearTimeout(initialTimer)
+      clearInterval(interval)
+    }
   }, [])
 
   return (
     <div 
       className="w-full h-full cursor-grab active:cursor-grabbing relative z-10"
-      onPointerDown={() => setHasInteracted(true)}
+      onPointerDown={() => setShowHint(false)}
     >
       <Canvas
         camera={{ position: [0, 0, 3.6], fov: 45 }}
@@ -474,15 +486,22 @@ export default function KLogoThree() {
 
       {/* Floating instructional drag-hint in the bottom center */}
       <div 
-        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex flex-col items-center gap-2 transition-all duration-1000 ${
-          hasInteracted ? 'opacity-0 scale-95 translate-y-2' : 'opacity-70 scale-100 translate-y-0'
+        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none select-none flex flex-col items-center gap-2.5 transition-all duration-1000 ${
+          showHint ? 'opacity-70 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
         }`}
       >
-        <img 
-          src="/drag-hint-silver.png" 
-          alt="Drag to explore KREIDO" 
-          className="w-[140px] sm:w-[170px] h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
-        />
+        <div className="flex items-center gap-2">
+          <img 
+            src="/drag-symbol-silver.png" 
+            alt="Drag icon" 
+            className="w-3.5 h-3.5 object-contain filter drop-shadow-[0_0_4px_rgba(255,255,255,0.15)]"
+          />
+          <img 
+            src="/drag-hint-silver.png" 
+            alt="Drag to explore KREIDO" 
+            className="w-[144px] sm:w-[175px] h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
+          />
+        </div>
         {/* Pulsing visual indicator */}
         <div className="w-1.5 h-1.5 rounded-full bg-[#ffffff] opacity-80 animate-pulse" />
       </div>
