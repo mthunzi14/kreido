@@ -640,8 +640,8 @@ export default function KLogoThree() {
   
   // Settings Deck States
   const [theme, setTheme] = useState('silver')
-  // Default star count is 50,000
-  const [starDensity, setStarDensity] = useState(50000)
+  // Default star count is 70,000
+  const [starDensity, setStarDensity] = useState(70000)
   // Default gas core density is 5% (0.05)
   const [nebulaIntensity, setNebulaIntensity] = useState(0.05)
   const [deckOpen, setDeckOpen] = useState(false)

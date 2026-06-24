@@ -137,6 +137,12 @@ a {
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
 }
 
+@media (hover: none) {
+  .custom-cursor {
+    display: none !important;
+  }
+}
+
 .cursor-trail {
   position: fixed;
   background: var(--text-titanium);
