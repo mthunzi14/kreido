@@ -48,7 +48,7 @@ export default function Home() {
           <img 
             src="/logo-text-silver.png" 
             alt="KREIDO — Your Vision, Engineered" 
-            className="w-[150px] sm:w-[180px] h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+            className="w-[135px] sm:w-[162px] h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
           />
         </div>
 

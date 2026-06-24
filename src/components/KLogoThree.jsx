@@ -481,7 +481,7 @@ export default function KLogoThree() {
         <img 
           src="/drag-hint-silver.png" 
           alt="Drag to explore KREIDO" 
-          className="w-48 sm:w-56 h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
+          className="w-[110px] sm:w-[130px] h-auto object-contain filter drop-shadow-[0_0_6px_rgba(255,255,255,0.1)]"
         />
         {/* Pulsing visual indicator */}
         <div className="w-1.5 h-1.5 rounded-full bg-[#ffffff] opacity-80 animate-pulse" />
