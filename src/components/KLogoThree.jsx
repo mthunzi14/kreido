@@ -176,6 +176,7 @@ function Scene() {
   const nodeRefs = useRef([])
   const meshRefs = useRef([])
   const [hoveredNode, setHoveredNode] = useState(null)
+  const [coreHovered, setCoreHovered] = useState(false)
 
   // Load the system core logo and custom node textures
   const logoTexture = useTexture('/logo-core-v5.png')
@@ -240,6 +241,13 @@ function Scene() {
       kRef.current.quaternion.copy(state.camera.quaternion)
     }
     if (coreMeshRef.current) {
+      // Smoothly expand core scale on hover using lerp
+      const targetCoreScale = coreHovered ? 0.52 : 0.45
+      const currentScale = coreMeshRef.current.scale.x
+      const newScale = THREE.MathUtils.lerp(currentScale, targetCoreScale, 0.15)
+      coreMeshRef.current.scale.set(newScale, newScale, 1)
+
+      // Spin central turbine
       coreMeshRef.current.rotation.z = time * 0.15
     }
 
@@ -318,13 +326,13 @@ function Scene() {
           if (mesh.material) {
             if (isHovered) {
               mesh.material.emissive.set('#ffffff') // clean silver/white highlight on hover
-              mesh.material.emissiveIntensity = 0.5
+              mesh.material.emissiveIntensity = 0.25 // desaturated to let silver textures show clearly
             } else {
-              // Rare periodic desaturated silver glimmer: every 20s, glimmer softly for 2s per node
-              const cycle = (time + idx * 4.0) % 20.0
+              // Rare periodic desaturated silver glimmer: every 24s, glimmer softly for 2s per node
+              const cycle = (time + idx * 6.0) % 24.0
               let emissiveIntensity = 0.0
               if (cycle < 2.0) {
-                emissiveIntensity = 0.2 * Math.sin((cycle / 2.0) * Math.PI)
+                emissiveIntensity = 0.12 * Math.sin((cycle / 2.0) * Math.PI)
               }
               mesh.material.emissive.set('#d5e2e6') // desaturated light silver-blue/steel glow
               mesh.material.emissiveIntensity = emissiveIntensity
@@ -352,7 +360,12 @@ function Scene() {
 
       {/* Central System Core Assembly (Basic material to prevent turning black, Z-axis spin, billboarded) */}
       <group ref={kRef}>
-        <mesh ref={coreMeshRef} scale={[0.45, 0.45, 1]}>
+        <mesh 
+          ref={coreMeshRef} 
+          scale={[0.45, 0.45, 1]}
+          onPointerOver={() => setCoreHovered(true)}
+          onPointerOut={() => setCoreHovered(false)}
+        >
           <planeGeometry />
           <meshBasicMaterial 
             map={logoTexture} 
@@ -408,7 +421,7 @@ function Scene() {
                   playTick()
                 }}
                 onMouseLeave={() => setHoveredNode(null)}
-                className={`font-mono text-[9px] px-2.5 py-0.5 rounded bg-[#050507]/95 border border-[#bfeeff]/80 text-[#bfeeff] uppercase tracking-widest transition-all duration-300 select-none cursor-pointer shadow-[0_0_12px_rgba(191,238,255,0.35)] ${
+                className={`font-mono text-[9px] px-2.5 py-0.5 rounded bg-[#050507]/95 border border-zinc-700 text-[#f5f5f7] uppercase tracking-widest transition-all duration-300 select-none cursor-pointer shadow-[0_0_12px_rgba(245,245,247,0.15)] ${
                   isHovered ? 'opacity-100 scale-105 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
                 }`}
                 style={{ whiteSpace: 'nowrap' }}

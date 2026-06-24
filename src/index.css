@@ -47,11 +47,10 @@ html, body {
 }
 
 /* Hide default cursor on pointer devices - Custom Cursor will render */
-body {
-  cursor: none;
-}
-@media (hover: none) {
-  body { cursor: auto; }
+@media (hover: hover) {
+  *, *::before, *::after {
+    cursor: none !important;
+  }
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -118,8 +117,8 @@ a {
 
 /* ── Custom Cursor ── */
 .custom-cursor {
-  width: 24px;
-  height: 24px;
+  width: 27px;
+  height: 27px;
   background-image: url('/hand-cursor.png');
   background-size: contain;
   background-repeat: no-repeat;
@@ -133,8 +132,8 @@ a {
   transition: transform 0.1s ease, width 0.15s ease, height 0.15s ease, filter 0.15s ease;
 }
 .custom-cursor.cursor-hover {
-  width: 32px;
-  height: 32px;
+  width: 35px;
+  height: 35px;
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
 }
 

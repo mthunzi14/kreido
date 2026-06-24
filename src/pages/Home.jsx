@@ -44,14 +44,12 @@ export default function Home() {
         />
 
         {/* Brand Header Overlay */}
-        <div className="absolute top-8 left-8 z-30 pointer-events-none select-none flex flex-col gap-1">
-          <h1 className="font-['Syne'] font-black text-2xl sm:text-3xl text-white tracking-tight uppercase"
-              style={{ textShadow: '0 0 12px rgba(255, 255, 255, 0.15)' }}>
-            KREIDO
-          </h1>
-          <p className="font-mono text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-widest">
-            Your Vision, Engineered
-          </p>
+        <div className="absolute top-8 left-8 z-30 pointer-events-none select-none">
+          <img 
+            src="/logo-text-silver.png" 
+            alt="KREIDO — Your Vision, Engineered" 
+            className="w-48 sm:w-56 h-auto object-contain filter drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+          />
         </div>
 
         {/* Full-screen 3D Canvas */}
